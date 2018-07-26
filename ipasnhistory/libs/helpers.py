@@ -76,6 +76,8 @@ def shutdown_requested() -> bool:
 
 
 def long_sleep(sleep_in_sec: int, shutdown_check: int=10) -> bool:
+    if shutdown_check > sleep_in_sec:
+        shutdown_check = sleep_in_sec
     sleep_until = datetime.now() + timedelta(seconds=sleep_in_sec)
     while sleep_until > datetime.now():
         time.sleep(shutdown_check)
