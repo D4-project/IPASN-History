@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 import logging
 from redis import StrictRedis
-from .libs.helpers import set_running, unset_running, get_socket_path
+from .libs.helpers import get_socket_path
 from datetime import datetime
 from dateutil.parser import parse
 import time
+
+from collections import OrderedDict
 
 
 class Query():
@@ -58,4 +60,5 @@ class Query():
                 to_return['response'][date] = data
             if waiting:
                 time.sleep(.1)
+        to_return['response'] = OrderedDict(sorted(to_return['response'].items(), key=lambda t: t[0]))
         return to_return
