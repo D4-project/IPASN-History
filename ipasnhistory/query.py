@@ -45,19 +45,17 @@ class Query():
         waiting = True
         to_return = {'meta': {'source': source, 'ip_version': address_family, 'ip': ip},
                      'response': {}}
-        print('Before', datetime.now())
         while waiting:
             waiting = False
             for k in keys:
+                _, _, date, _ = k.split('|')
                 if to_return['response'].get(date):
                     continue
                 data = self.cache.hgetall(k)
                 if not data:
                     waiting = True
                     continue
-                _, _, date, _ = k.split('|')
                 to_return['response'][date] = data
             if waiting:
                 time.sleep(.1)
-        print('After', datetime.now())
         return to_return
