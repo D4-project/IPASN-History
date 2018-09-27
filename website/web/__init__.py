@@ -12,12 +12,11 @@ q = Query()
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    # The values in request.args and request.form are lists, convert it to unique values
     if request.method == 'POST':
         d = {k: v for k, v in request.form.items()}
     elif request.method == 'GET':
-        # The values in request.args are lists, convert it to unique values
         d = {k: v for k, v in request.args.items()}
 
-    print('-----', d)
     # Expected keys in d: ip, source, address_family, date, first, last
     return jsonify(q.query(**dict(d)))

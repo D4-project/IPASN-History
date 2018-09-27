@@ -47,6 +47,7 @@ class Query():
         waiting = True
         to_return = {'meta': {'source': source, 'ip_version': address_family, 'ip': ip},
                      'response': {}}
+        p_update_expire = self.cache.pipeline()
         while waiting:
             waiting = False
             for k in keys:
@@ -58,7 +59,9 @@ class Query():
                     waiting = True
                     continue
                 to_return['response'][date] = data
+                p_update_expire.expire(k, 43200)  # 12h
             if waiting:
                 time.sleep(.1)
         to_return['response'] = OrderedDict(sorted(to_return['response'].items(), key=lambda t: t[0]))
+        p_update_expire.execute()
         return to_return
