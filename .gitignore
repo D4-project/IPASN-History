@@ -110,3 +110,6 @@ rawdata
 storage/ardb.pid
 storage/data
 storage/repl
+
+# Vim
+*.swp
