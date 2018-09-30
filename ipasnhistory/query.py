@@ -22,6 +22,8 @@ class Query():
 
     def nearest_date(self, source: str, address_family: str, date: str):
         dates = [parse(d) for d in self.cache.smembers(f'{source}|{address_family}|cached_dates')]
+        if not dates:
+            raise Exception(f'No route views have been loaded for {source} / {address_family} yet.')
         return min(dates, key=lambda x: abs(x - parse(date))).isoformat()
 
     def find_interval(self, source: str, address_family: str, first: str, last: str=None):
