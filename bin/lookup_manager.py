@@ -38,19 +38,19 @@ class LookupManager(AbstractManager):
         self.running_processes = []
         # Start process today -> today + self.floating_window_days
         last = init_date + timedelta(days=self.floating_window_days)
-        p = Popen('lookup.py', self.source, init_date.isoformat(), last.isoformat())
+        p = Popen(['lookup.py', self.source, init_date.isoformat(), last.isoformat()])
         self.running_processes.append((p, init_date, last))
         # Start process today - self.floating_window_days/2 -> today + self.floating_window_days/2
         first = init_date - timedelta(days=self.floating_window_days / 2)
         last = init_date + timedelta(days=self.floating_window_days / 2)
-        p = Popen('lookup.py', self.source, first.isoformat(), last.isoformat())
+        p = Popen(['lookup.py', self.source, first.isoformat(), last.isoformat()])
         self.running_processes.append((p, first, last))
 
         current = init_date - timedelta(days=1)
         # Start all processes with complete datasets
         while current > (init_date - timedelta(days=self.days_in_memory)):
             begin_interval = current - timedelta(self.floating_window_days)
-            p = Popen('lookup.py', self.source, begin_interval.isoformat(), current.isoformat())
+            p = Popen(['lookup.py', self.source, begin_interval.isoformat(), current.isoformat()])
             self.running_processes.append((p, begin_interval, current))
             current = current - timedelta(self.floating_window_days / 2)
 
@@ -64,7 +64,7 @@ class LookupManager(AbstractManager):
                 if last < (date.today() + timedelta(self.floating_window_days / 2)):
                     new_first = date.today()
                     new_last = date.today() + timedelta(days=self.floating_window_days)
-                    new_p = Popen('lookup.py', self.source, new_first.isoformat(), new_last.isoformat())
+                    new_p = Popen(['lookup.py', self.source, new_first.isoformat(), new_last.isoformat()])
                     self.running_processes.append((new_p, new_first, new_last))
             if last < (date.today() - timedelta(days=self.days_in_memory)):
                 p.kill()

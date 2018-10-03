@@ -54,11 +54,8 @@ class Lookup(AbstractManager):
             if self.trees_v4[self.source].get(d) is None:
                 self.trees_v4[self.source][d] = pytricia.PyTricia()
             if not self.trees_v4[self.source][d]:
-                logging.debug(f'Loading {self.source} {d} v4')
                 self.load_tree(d, 'v4')
-            if self.trees_v4[self.source][d]:
                 self.loaded_dates_v4.append(d)
-            logging.debug(f'Done: {self.source} {d} v4')
 
     def load_all_v6(self):
         available_dates_v6 = self.storagedb.smembers(f'{self.source}|v6|dates')
@@ -67,11 +64,8 @@ class Lookup(AbstractManager):
             if self.trees_v6[self.source].get(d) is None:
                 self.trees_v6[self.source][d] = pytricia.PyTricia(128)
             if not self.trees_v6[self.source][d]:
-                logging.debug(f'Loading {self.source} {d} v6')
                 self.load_tree(d, 'v6')
-            if self.trees_v6[self.source][d]:
                 self.loaded_dates_v6.append(d)
-            logging.debug(f'Done: {self.source} {d} v6')
 
     def load_all(self):
         self.load_all_v4()
@@ -105,7 +99,7 @@ class Lookup(AbstractManager):
                 break
             p = self.cache.pipeline()
             for q in queries:
-                logging.debug('Searching {q}')
+                logging.debug(f'Searching {q}')
                 prefix, address_family, date, ip = q.split('|')
                 if prefix != self.source:
                     # query for an other data source, ignore
