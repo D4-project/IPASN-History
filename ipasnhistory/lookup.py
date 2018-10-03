@@ -61,7 +61,7 @@ class Lookup(AbstractManager):
             logging.debug(f'Done: {self.source} {d} v4')
 
     def load_all_v6(self):
-        available_dates_v6 = [parse(d) for d in self.storagedb.smembers(f'{self.source}|v6|dates')]
+        available_dates_v6 = self.storagedb.smembers(f'{self.source}|v6|dates')
         to_load_v6 = [available_date for available_date in available_dates_v6 if available_date >= self.first_date and available_date <= self.last_date]
         for d in to_load_v6:
             if self.trees_v6[self.source].get(d) is None:
