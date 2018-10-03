@@ -12,4 +12,4 @@ if __name__ == '__main__':
     p.wait()
     Popen(['caida_dl.py'])
     Popen(['caida_loader.py'])
-    Popen(['lookup.py'])
+    Popen(['lookup_manager.py'])

@@ -9,7 +9,7 @@ from ipasnhistory.caida_loader import CaidaLoader
 from ipasnhistory.libs.helpers import get_homedir
 
 logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s:%(message)s',
-                    level=logging.DEBUG, datefmt='%I:%M:%S')
+                    level=logging.INFO, datefmt='%I:%M:%S')
 
 
 class CaidaManager(AbstractManager):
