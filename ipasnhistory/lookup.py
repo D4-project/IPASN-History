@@ -48,7 +48,7 @@ class Lookup(AbstractManager):
         return None
 
     def load_all_v4(self):
-        available_dates_v4 = [parse(d) for d in self.storagedb.smembers(f'{self.source}|v4|dates')]
+        available_dates_v4 = self.storagedb.smembers(f'{self.source}|v4|dates')
         to_load_v4 = [available_date for available_date in available_dates_v4 if available_date >= self.first_date and available_date <= self.last_date]
         for d in to_load_v4:
             if self.trees_v4[self.source].get(d) is None:
