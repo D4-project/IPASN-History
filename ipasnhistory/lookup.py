@@ -110,13 +110,15 @@ class Lookup(AbstractManager):
                 if prefix != self.source:
                     # query for an other data source, ignore
                     continue
-                if date not in self.loaded_dates:
-                    # Date not loaded in this process, ignore
-                    continue
                 if address_family == 'v4':
                     trees = self.trees_v4
+                    loaded_dates = self.loaded_dates_v4
                 else:
                     trees = self.trees_v6
+                    loaded_dates = self.loaded_dates_v6
+                if date not in loaded_dates:
+                    # Date not loaded in this process, ignore
+                    continue
                 p.hmset(q, {'asn': trees[prefix][date].get(ip),
                             'prefix': trees[prefix][date].get_key(ip)})
                 p.expire(q, 43200)  # 12h
