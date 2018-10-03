@@ -4,50 +4,78 @@ import logging
 from redis import StrictRedis
 from .libs.helpers import set_running, unset_running, get_socket_path
 import pytricia
-from datetime import date
+from datetime import datetime
 from typing import List
 from .abstractmanager import AbstractManager
+from dateutil.parser import parse
 
 
 class Lookup(AbstractManager):
 
-    def __init__(self, source: str, dates: List[date], loglevel: int=logging.DEBUG):
+    def __init__(self, source: str, first: str, last: str, loglevel: int=logging.DEBUG):
         self.__init_logger(loglevel)
         self.storagedb = StrictRedis(unix_socket_path=get_socket_path('storage'), decode_responses=True)
         self.cache = StrictRedis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
+
         self.source = source
-        self.dates = [d.isoformat() for d in dates]
-        self.loaded_dates = []
-        self.trees_v4 = {source: {d: pytricia.PyTricia() for d in self.dates}}
-        self.trees_v6 = {source: {d: pytricia.PyTricia(128) for d in self.dates}}
-        self.static = False
+        self.first_date = first
+        self.last_date = last
+
+        self.trees_v4 = {source: {}}
+        self.loaded_dates_v4 = []
+        self.trees_v6 = {source: {}}
+        self.loaded_dates_v6 = []
+        # self.trees_v4 = {source: {d: pytricia.PyTricia() for d in self.dates}}
+        # self.trees_v6 = {source: {d: pytricia.PyTricia(128) for d in self.dates}}
 
     def __init_logger(self, loglevel) -> None:
         self.logger = logging.getLogger(f'{self.__class__.__name__}')
         self.logger.setLevel(loglevel)
 
-    def locked(self):
+    # def locked(self):
         # Avoid to see scripts providing data for the same time frame to be locked at the same time
-        locked_dates = self.cache.smembers(f'lock|{self.source}')
-        if set(self.dates).intersection(locked_dates):
-            return True
-        return False
+    #    locked_dates = self.cache.smembers(f'lock|{self.source}')
+    #    if set(self.dates).intersection(locked_dates):
+    #        logging.debug(f'Locked: {self.dates[0]} {self.dates[-1]}')
+    #        return True
+    #    return False
+
+    def find_day_in_storage(self, to_search: str, available_dates: List[datetime]) -> str:
+        to_search = parse(to_search)
+        for available_date in available_dates:
+            if to_search.date() == available_date.date():
+                return available_date
+        return None
+
+    def load_all_v4(self):
+        available_dates_v4 = [parse(d) for d in self.storagedb.smembers(f'{self.source}|v4|dates')]
+        to_load_v4 = [available_date for available_date in available_dates_v4 if available_date >= self.first_date and available_date <= self.last_date]
+        for d in to_load_v4:
+            if self.trees_v4[self.source].get(d) is None:
+                self.trees_v4[self.source][d] = pytricia.PyTricia()
+            if not self.trees_v4[self.source][d]:
+                logging.debug(f'Loading {self.source} {d} v4')
+                self.load_tree(d, 'v4')
+            if self.trees_v4[self.source][d]:
+                self.loaded_dates_v4.append(d)
+            logging.debug(f'Done: {self.source} {d} v4')
+
+    def load_all_v6(self):
+        available_dates_v6 = [parse(d) for d in self.storagedb.smembers(f'{self.source}|v6|dates')]
+        to_load_v6 = [available_date for available_date in available_dates_v6 if available_date >= self.first_date and available_date <= self.last_date]
+        for d in to_load_v6:
+            if self.trees_v6[self.source].get(d) is None:
+                self.trees_v6[self.source][d] = pytricia.PyTricia(128)
+            if not self.trees_v6[self.source][d]:
+                logging.debug(f'Loading {self.source} {d} v6')
+                self.load_tree(d, 'v6')
+            if self.trees_v6[self.source][d]:
+                self.loaded_dates_v6.append(d)
+            logging.debug(f'Done: {self.source} {d} v6')
 
     def load_all(self):
-        if self.static or self.locked():
-            return
-        self.cache.sadd(f'lock|{self.source}', *self.dates)
-        for d in self.dates:
-            if not self.trees_v4[self.source][d] and self.storagedb.sismember(f'{self.source}|v4|dates', d):
-                self.load_tree(d, 'v4')
-            if not self.trees_v6[self.source][d] and self.storagedb.sismember(f'{self.source}|v6|dates', d):
-                self.load_tree(d, 'v6')
-            if self.trees_v4[self.source][d] and self.trees_v6[self.source][d]:
-                self.loaded_dates.append(d)
-        if sorted(self.dates) == sorted(self.loaded_dates):
-            # All the expected dates are loaded, don't touch that dataset anymore
-            self.static = True
-        self.cache.srem(f'lock|{self.source}', *self.dates)
+        self.load_all_v4()
+        self.load_all_v6()
 
     def load_tree(self, announces_date: str, address_family: str):
         logging.debug(f'Loading {self.source} {address_family} {announces_date}')
@@ -77,6 +105,7 @@ class Lookup(AbstractManager):
                 break
             p = self.cache.pipeline()
             for q in queries:
+                logging.debug('Searching {q}')
                 prefix, address_family, date, ip = q.split('|')
                 if prefix != self.source:
                     # query for an other data source, ignore
