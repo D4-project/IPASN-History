@@ -23,10 +23,10 @@ class CaidaManager(AbstractManager):
         if not storage_directory:
             self.storage_directory = get_homedir() / 'rawdata'
         self.downloader = CaidaDownloader(self.storage_directory, loglevel)
-        # Download last month data.
-        last_month = date.today() - relativedelta(months=1)
+        # Download last 6 month data.
+        last_months = date.today() - relativedelta(months=6)
 
-        first_date = last_month
+        first_date = last_months
         v4 = asyncio.ensure_future(self.downloader.find_routes('v4', first_date=first_date))
         v6 = asyncio.ensure_future(self.downloader.find_routes('v6', first_date=first_date))
 

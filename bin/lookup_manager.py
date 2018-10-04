@@ -25,8 +25,8 @@ The last 30 days are covered by 2 lookup processses to avoid downtime
 class LookupManager(AbstractManager):
 
     def __init__(self,
-                 days_in_memory: int=30,  # FIXME make it 180
-                 floating_window_days: int=8,  # FIXME make it 30
+                 days_in_memory: int=180,
+                 floating_window_days: int=30,
                  source: str='caida',
                  loglevel: int=logging.WARNING):
         super().__init__(loglevel)
