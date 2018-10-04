@@ -68,9 +68,11 @@ class LookupManager(AbstractManager):
                     self.running_processes.append((new_p, new_first, new_last))
             if last < (date.today() - timedelta(days=self.days_in_memory)):
                 p.kill()
-            if p.poll():
+            elif p.poll():
                 logging.warning(f'Lookup process died: {first} {last}')
                 # FIXME - maybe: respawn a dead process?
+        # Cleanup the process list
+        self.running_processes = [process for process in self.running_processes if process[0].poll() is None]
 
 
 if __name__ == '__main__':

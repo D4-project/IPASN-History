@@ -4,10 +4,7 @@ import logging
 from redis import StrictRedis
 from .libs.helpers import set_running, unset_running, get_socket_path
 import pytricia
-from datetime import datetime
-from typing import List
 from .abstractmanager import AbstractManager
-from dateutil.parser import parse
 
 
 class Lookup(AbstractManager):
@@ -21,55 +18,36 @@ class Lookup(AbstractManager):
         self.first_date = first
         self.last_date = last
 
-        self.trees_v4 = {source: {}}
-        self.loaded_dates_v4 = []
-        self.trees_v6 = {source: {}}
-        self.loaded_dates_v6 = []
-        # self.trees_v4 = {source: {d: pytricia.PyTricia() for d in self.dates}}
-        # self.trees_v6 = {source: {d: pytricia.PyTricia(128) for d in self.dates}}
+        self.trees = {'v4': {source: {}}, 'v6': {source: {}}}
+        self.loaded_dates = {'v4': [], 'v6': []}
 
     def __init_logger(self, loglevel) -> None:
         self.logger = logging.getLogger(f'{self.__class__.__name__}')
         self.logger.setLevel(loglevel)
 
-    # def locked(self):
+    def locked(self, address_family: str):
         # Avoid to see scripts providing data for the same time frame to be locked at the same time
-    #    locked_dates = self.cache.smembers(f'lock|{self.source}')
-    #    if set(self.dates).intersection(locked_dates):
-    #        logging.debug(f'Locked: {self.dates[0]} {self.dates[-1]}')
-    #        return True
-    #    return False
-
-    def find_day_in_storage(self, to_search: str, available_dates: List[datetime]) -> str:
-        to_search = parse(to_search)
-        for available_date in available_dates:
-            if to_search.date() == available_date.date():
-                return available_date
-        return None
-
-    def load_all_v4(self):
-        available_dates_v4 = self.storagedb.smembers(f'{self.source}|v4|dates')
-        to_load_v4 = [available_date for available_date in available_dates_v4 if available_date >= self.first_date and available_date <= self.last_date]
-        for d in to_load_v4:
-            if self.trees_v4[self.source].get(d) is None:
-                self.trees_v4[self.source][d] = pytricia.PyTricia()
-            if not self.trees_v4[self.source][d]:
-                self.load_tree(d, 'v4')
-                self.loaded_dates_v4.append(d)
-
-    def load_all_v6(self):
-        available_dates_v6 = self.storagedb.smembers(f'{self.source}|v6|dates')
-        to_load_v6 = [available_date for available_date in available_dates_v6 if available_date >= self.first_date and available_date <= self.last_date]
-        for d in to_load_v6:
-            if self.trees_v6[self.source].get(d) is None:
-                self.trees_v6[self.source][d] = pytricia.PyTricia(128)
-            if not self.trees_v6[self.source][d]:
-                self.load_tree(d, 'v6')
-                self.loaded_dates_v6.append(d)
+        for locked_interval in self.cache.smembers(f'lock|{self.source}|{address_family}'):
+            locked_first, locked_last = locked_interval.split('_')
+            if (locked_first <= self.first_date <= locked_last) or (locked_first <= self.last_date <= locked_last):
+                logging.debug(f'Locked: {self.first_date} {self.last_date} because of {locked_first} {locked_last}')
+                return True
+        return False
 
     def load_all(self):
-        self.load_all_v4()
-        self.load_all_v6()
+        for address_family in ['v4', 'v6']:
+            if self.locked(address_family):
+                continue
+            self.cache.sadd(f'lock|{self.source}|{address_family}', f'{self.first_date}_{self.last_date}')
+            available_dates = self.storagedb.smembers(f'{self.source}|{address_family}|dates')
+            to_load = [available_date for available_date in available_dates if available_date >= self.first_date and available_date <= self.last_date]
+            for d in to_load:
+                if self.trees[address_family][self.source].get(d) is None:
+                    self.trees[address_family][self.source][d] = pytricia.PyTricia()
+                if not self.trees[address_family][self.source][d]:
+                    self.load_tree(d, address_family)
+                    self.loaded_dates[address_family].append(d)
+            self.cache.srem(f'lock|{self.source}|{address_family}', f'{self.first_date}_{self.last_date}')
 
     def load_tree(self, announces_date: str, address_family: str):
         logging.debug(f'Loading {self.source} {address_family} {announces_date}')
@@ -81,12 +59,7 @@ class Lookup(AbstractManager):
 
         for asn, ip_prefixes in zip(asns, to_load):
             for ip_prefix in ip_prefixes:
-                if address_family == 'v4':
-                    self.trees_v4[self.source][announces_date][ip_prefix] = asn
-                elif address_family == 'v6':
-                    self.trees_v6[self.source][announces_date][ip_prefix] = asn
-                else:
-                    raise Exception(f'address_family has to be v4 or v6, not {address_family}')
+                self.trees[address_family][self.source][announces_date][ip_prefix] = asn
         self.cache.sadd(f'{self.source}|{address_family}|cached_dates', announces_date)
         logging.debug(f'Done with Loading {self.source} {address_family}')
 
@@ -104,17 +77,11 @@ class Lookup(AbstractManager):
                 if prefix != self.source:
                     # query for an other data source, ignore
                     continue
-                if address_family == 'v4':
-                    trees = self.trees_v4
-                    loaded_dates = self.loaded_dates_v4
-                else:
-                    trees = self.trees_v6
-                    loaded_dates = self.loaded_dates_v6
-                if date not in loaded_dates:
+                if date not in self.loaded_dates[address_family]:
                     # Date not loaded in this process, ignore
                     continue
-                p.hmset(q, {'asn': trees[prefix][date].get(ip),
-                            'prefix': trees[prefix][date].get_key(ip)})
+                p.hmset(q, {'asn': self.trees[address_family][prefix][date].get(ip),
+                            'prefix': self.trees[address_family][prefix][date].get_key(ip)})
                 p.expire(q, 43200)  # 12h
                 p.srem('query', q)
             p.execute()
