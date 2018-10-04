@@ -21,6 +21,9 @@ class Lookup(AbstractManager):
         self.trees = {'v4': {source: {}}, 'v6': {source: {}}}
         self.loaded_dates = {'v4': [], 'v6': []}
 
+        # For the initial load, we don't care about the locks and want to load everything as fast as possible.
+        self.load_all(ignore_lock=True)
+
     def __init_logger(self, loglevel) -> None:
         self.logger = logging.getLogger(f'{self.__class__.__name__}')
         self.logger.setLevel(loglevel)
@@ -34,9 +37,9 @@ class Lookup(AbstractManager):
                 return True
         return False
 
-    def load_all(self):
+    def load_all(self, ignore_lock: bool=False):
         for address_family in ['v4', 'v6']:
-            if self.locked(address_family):
+            if not ignore_lock and self.locked(address_family):
                 continue
             self.cache.sadd(f'lock|{self.source}|{address_family}', f'{self.first_date}_{self.last_date}')
             available_dates = self.storagedb.smembers(f'{self.source}|{address_family}|dates')
