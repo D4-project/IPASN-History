@@ -41,10 +41,13 @@ class Lookup(AbstractManager):
         for address_family in ['v4', 'v6']:
             if not ignore_lock and self.locked(address_family):
                 continue
-            if not ignore_lock:
-                self.cache.sadd(f'lock|{self.source}|{address_family}', f'{self.first_date}_{self.last_date}')
             available_dates = self.storagedb.smembers(f'{self.source}|{address_family}|dates')
             to_load = [available_date for available_date in available_dates if available_date >= self.first_date and available_date <= self.last_date]
+            if not set(to_load).difference(set(self.trees[address_family][self.source].keys())):
+                # Everything available has already been loaded
+                continue
+            if not ignore_lock:
+                self.cache.sadd(f'lock|{self.source}|{address_family}', f'{self.first_date}_{self.last_date}')
             for d in to_load:
                 if self.trees[address_family][self.source].get(d) is None:
                     self.trees[address_family][self.source][d] = pytricia.PyTricia()
