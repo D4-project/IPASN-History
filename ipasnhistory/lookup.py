@@ -41,7 +41,8 @@ class Lookup(AbstractManager):
         for address_family in ['v4', 'v6']:
             if not ignore_lock and self.locked(address_family):
                 continue
-            self.cache.sadd(f'lock|{self.source}|{address_family}', f'{self.first_date}_{self.last_date}')
+            if not ignore_lock:
+                self.cache.sadd(f'lock|{self.source}|{address_family}', f'{self.first_date}_{self.last_date}')
             available_dates = self.storagedb.smembers(f'{self.source}|{address_family}|dates')
             to_load = [available_date for available_date in available_dates if available_date >= self.first_date and available_date <= self.last_date]
             for d in to_load:
@@ -50,7 +51,8 @@ class Lookup(AbstractManager):
                 if not self.trees[address_family][self.source][d]:
                     self.load_tree(d, address_family)
                     self.loaded_dates[address_family].append(d)
-            self.cache.srem(f'lock|{self.source}|{address_family}', f'{self.first_date}_{self.last_date}')
+            if not ignore_lock:
+                self.cache.srem(f'lock|{self.source}|{address_family}', f'{self.first_date}_{self.last_date}')
 
     def load_tree(self, announces_date: str, address_family: str):
         logging.debug(f'Loading {self.source} {address_family} {announces_date}')
