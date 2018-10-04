@@ -86,6 +86,7 @@ class CaidaDownloader():
         set_running(self.__class__.__name__)
         has_new, path = await self._has_new(address_family)
         if not has_new:
+            unset_running(self.__class__.__name__)
             return
         async with aiohttp.ClientSession() as session:
             await self.download_routes(session, address_family, path)
