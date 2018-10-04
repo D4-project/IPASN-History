@@ -80,6 +80,10 @@ class Lookup(AbstractManager):
                 break
             p = self.cache.pipeline()
             for q in queries:
+                if self.cache.exists(q):
+                    # The query is already cached, cleanup.
+                    self.cache.srem('query', q)
+                    continue
                 logging.debug(f'Searching {q}')
                 prefix, address_family, date, ip = q.split('|')
                 if prefix != self.source:
