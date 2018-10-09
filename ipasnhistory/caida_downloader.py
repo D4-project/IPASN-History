@@ -35,7 +35,8 @@ class CaidaDownloader():
         root_url = self._get_root_url(address_family)
         async with aiohttp.ClientSession() as session:
             async with session.get(root_url.format('pfx2as-creation.log')) as r:
-                last_entry = await r.text.split('\n')[-2]
+                text = await r.text()
+                last_entry = text.split('\n')[-2]
                 path = last_entry.split('\t')[-1]
                 if (self.storage_root / 'caida' / address_family / path).exists():
                     self.logger.debug(f'Same file already loaded: {path}')
