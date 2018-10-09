@@ -33,14 +33,10 @@ class CaidaManager(AbstractManager):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(asyncio.gather(v4, v6, return_exceptions=True))
 
-    def _to_run_forever(self):
+    async def _to_run_forever(self):
         try:
-            loop = asyncio.get_event_loop()
-            tasks = []
             for address_family in ['v4', 'v6']:
-                task = self.downloader.download_latest(address_family)
-                tasks.append(task)
-            loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
+                await self.downloader.download_latest(address_family)
         except aiohttp.client_exceptions.ClientConnectorError as e:
             self.logger.critical(f'Error while fetching a routeview file: {e}')
 
