@@ -8,7 +8,7 @@ from redis import StrictRedis
 from redis.exceptions import ConnectionError
 from datetime import datetime, timedelta
 import time
-
+import asyncio
 
 def get_storage_path() -> Path:
     if not os.environ.get('VIRTUAL_ENV'):
@@ -73,6 +73,17 @@ def shutdown_requested() -> bool:
         return True
     except ConnectionError:
         return True
+
+
+async def long_sleep_async(sleep_in_sec: int, shutdown_check: int=10) -> bool:
+    if shutdown_check > sleep_in_sec:
+        shutdown_check = sleep_in_sec
+    sleep_until = datetime.now() + timedelta(seconds=sleep_in_sec)
+    while sleep_until > datetime.now():
+        asyncio.sleep(shutdown_check)
+        if shutdown_requested():
+            return False
+    return True
 
 
 def long_sleep(sleep_in_sec: int, shutdown_check: int=10) -> bool:

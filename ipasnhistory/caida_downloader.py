@@ -40,9 +40,11 @@ class CaidaDownloader():
                 if (self.storage_root / 'caida' / address_family / path).exists():
                     self.logger.debug(f'Same file already loaded: {path}')
                     return False, path
+                self.logger.info(f'New route found: {path}')
                 return True, path
 
     async def download_routes(self, session: aiohttp.ClientSession, address_family: str, path: str) -> None:
+        self.logger.info(f'New file to download: {path}')
         store_path = self.storage_root / 'caida' / address_family / path
         if store_path.exists():
             # Already downloaded
@@ -84,10 +86,13 @@ class CaidaDownloader():
 
     async def download_latest(self, address_family: str) -> None:
         set_running(self.__class__.__name__)
+        self.logger.debug(f'Search for new routes ({address_family}).')
         has_new, path = await self._has_new(address_family)
         if not has_new:
+            self.logger.debug(f'None found ({address_family}.')
             unset_running(self.__class__.__name__)
             return
         async with aiohttp.ClientSession() as session:
+            self.logger.debug(f'Has new ({address_family}.')
             await self.download_routes(session, address_family, path)
         unset_running(self.__class__.__name__)
