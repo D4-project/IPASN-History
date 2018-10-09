@@ -45,11 +45,11 @@ class CaidaDownloader():
                 return True, path
 
     async def download_routes(self, session: aiohttp.ClientSession, address_family: str, path: str) -> None:
-        self.logger.info(f'New file to download: {path}')
         store_path = self.storage_root / 'caida' / address_family / path
         if store_path.exists():
             # Already downloaded
             return
+        self.logger.info(f'New file to download: {path}')
         safe_create_dir(store_path.parent)
         root_url = self._get_root_url(address_family)
         async with self.sema, session.get(root_url.format(path)) as r:

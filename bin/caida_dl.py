@@ -13,12 +13,12 @@ from ipasnhistory.caida_downloader import CaidaDownloader
 from ipasnhistory.libs.helpers import get_homedir
 
 logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s:%(message)s',
-                    level=logging.WARNING, datefmt='%I:%M:%S')
+                    level=logging.INFO, datefmt='%I:%M:%S')
 
 
 class CaidaManager(AbstractManager):
 
-    def __init__(self, storage_directory: Path=None, loglevel: int=logging.WARNING):
+    def __init__(self, storage_directory: Path=None, loglevel: int=logging.INFO):
         super().__init__(loglevel)
         if not storage_directory:
             self.storage_directory = get_homedir() / 'rawdata'

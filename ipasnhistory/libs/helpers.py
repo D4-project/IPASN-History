@@ -80,7 +80,7 @@ async def long_sleep_async(sleep_in_sec: int, shutdown_check: int=10) -> bool:
         shutdown_check = sleep_in_sec
     sleep_until = datetime.now() + timedelta(seconds=sleep_in_sec)
     while sleep_until > datetime.now():
-        asyncio.sleep(shutdown_check)
+        await asyncio.sleep(shutdown_check)
         if shutdown_requested():
             return False
     return True
