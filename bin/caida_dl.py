@@ -47,4 +47,6 @@ class CaidaManager(AbstractManager):
 
 if __name__ == '__main__':
     m = CaidaManager()
-    asyncio.run(m.run_async(sleep_in_sec=3600))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(m.run_async(sleep_in_sec=3600))
+    loop.close()
