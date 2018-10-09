@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from abc import ABC, abstractmethod
+from abc import ABC
 import logging
 
 from .libs.helpers import long_sleep, shutdown_requested, long_sleep_async
@@ -15,7 +15,9 @@ class AbstractManager(ABC):
         self.logger.setLevel(loglevel)
         self.logger.info(f'Initializing {self.__class__.__name__}')
 
-    @abstractmethod
+    async def _to_run_forever_async(self):
+        pass
+
     def _to_run_forever(self):
         pass
 
@@ -25,7 +27,7 @@ class AbstractManager(ABC):
             if shutdown_requested():
                 break
             try:
-                self._to_run_forever()
+                await self._to_run_forever_async()
             except Exception:
                 self.logger.exception(f'Something went terribly wrong in {self.__class__.__name__}.')
             if not await long_sleep_async(sleep_in_sec):

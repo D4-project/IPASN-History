@@ -33,7 +33,7 @@ class CaidaManager(AbstractManager):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(asyncio.gather(v4, v6, return_exceptions=True))
 
-    async def _to_run_forever(self):
+    async def _to_run_forever_async(self):
         try:
             for address_family in ['v4', 'v6']:
                 await self.downloader.download_latest(address_family)
