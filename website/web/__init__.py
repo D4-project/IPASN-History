@@ -18,5 +18,5 @@ def index():
     elif request.method == 'GET':
         d = {k: v for k, v in request.args.items()}
 
-    # Expected keys in d: ip, source, address_family, date, first, last
+    # Expected keys in d: ip, source, address_family, date, first, last, cache_only, precision_delta
     return jsonify(q.query(**dict(d)))
