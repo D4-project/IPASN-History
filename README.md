@@ -111,9 +111,13 @@ Response:
 
 **Note**: The date returned may differ from the one queried: the system will figure out the closest available date to the one queried.
 
+Examples available [in the test directory](https://github.com/D4-project/IPASN-History/blob/master/test/test_query.py).
+
 # Installation
 
 **IMPORTANT**: run it in a virtualenv, seriously. This install guide assumes you know what it is, and use one.
+
+**NOTE**: Yes, it requires python3.6+. No, it will never support anything older.
 
 ## Install redis
 
