@@ -14,24 +14,46 @@ The REST API has two entry points:
 
 ```json
 {
-    "sources": ["caida"],
-    "expected_interval": {"first": "YYYY-MM-DD",
-                          "last": "YYYY-MM-DD"},
-    "cached_dates": {
-        "v4": {
-            "cached": [<all the dates in ISO format>],
-            "missing": [<missing dates in ISO format>]},
-            "percent": 90
-        },
-        "v6": {
-            "cached": [<all the dates in ISO format>],
-            "missing": [<missing dates in ISO format>]},
-            "percent": 90
-        }
+  "sources": [
+    "caida"
+  ],
+  "expected_interval": {
+    "first": "2018-05-12",
+    "last": "2018-11-08"
+  },
+  "cached_dates": {
+    "caida": {
+      "v4": {
+        "cached": [
+          "2018-04-26T12:00:00",
+          "2018-04-27T12:00:00",
+		  //...
+          "2018-11-05T12:00:00",
+          "2018-11-06T12:00:00"
+        ],
+        "missing": [
+          "2018-11-07"
+        ],
+        "percent": 99.44444444444444
+      },
+      "v6": {
+        "cached": [
+          "2018-04-26T12:00:00",
+          "2018-04-27T12:00:00",
+		  //...
+          "2018-11-06T12:00:00",
+          "2018-11-07T12:00:00"
+        ],
+        "missing": [],
+        "percent": 100.0
+      }
     }
+  }
 }
-
 ```
+
+**Note**: the percentage will help 3rd party component to decide if they should query the service now or wait.
+		  It is expected to miss a few days and probably not important.
 
 * / (POST/GET): Runs a query.
 
@@ -51,19 +73,23 @@ Response:
 
 ```json
 {
-    "meta": {
-        "source": source, "ip_version": address_family, "ip": ip
-    },
-    "error": "Optional, only if there was an error",
-    "info": "Optional, informational message if needed",
-    "response": {
-        "YYYY-MM-DD": {"asn": ASN, "prefix": Prefix},
-        # Multiple entries if an interval was queried.
+  "meta": {
+    "source": "caida",
+    "ip_version": "v4",
+    "ip": "146.185.222.49"
+  },
+  "error": "Optional, only if there was an error",
+  "info": "Optional, informational message if needed",
+  "response": {
+    "2018-11-06T12:00:00": {
+      "asn": "44050",
+      "prefix": "146.185.222.0/24"
     }
+  }
 }
-
 ```
-**Important**: The date returned may differ from the one queried: the system will figure out the closest available date to the one queried.
+
+**Note**: The date returned may differ from the one queried: the system will figure out the closest available date to the one queried.
 
 
 # Installation
