@@ -64,3 +64,14 @@ Response:
 
 ```
 **Important**: The date returned may differ from the one queried: the system will figure out the closest available date to the one queried.
+
+
+# Installation
+
+You need to have ardb and redis installed in the parent directory.
+
+ardb (more precisely rocksdb) doesn't compile on ubuntu 18.04 unless you disable warning as error:
+
+```bash
+DISABLE_WARNING_AS_ERROR=1 make
+```
