@@ -14,19 +14,19 @@ The REST API has two entry points:
 
 ```json
 {
-    'sources': ['caida'],
-    'expected_interval': {'first': 'YYYY-MM-DD',
-                          'last': 'YYYY-MM-DD'},
-    'cached_dates': {
-        'v4': {
-            'cached': [<all the dates in ISO format>],
-            'missing': [<missing dates in ISO format>]},
-            'pervent: 90'
+    "sources": ["caida"],
+    "expected_interval": {"first": "YYYY-MM-DD",
+                          "last": "YYYY-MM-DD"},
+    "cached_dates": {
+        "v4": {
+            "cached": [<all the dates in ISO format>],
+            "missing": [<missing dates in ISO format>]},
+            "percent": 90
         },
-        'v6': {
-            'cached': [<all the dates in ISO format>],
-            'missing': [<missing dates in ISO format>]},
-            'pervent: 90'
+        "v6": {
+            "cached": [<all the dates in ISO format>],
+            "missing": [<missing dates in ISO format>]},
+            "percent": 90
         }
     }
 }
@@ -51,13 +51,13 @@ Response:
 
 ```json
 {
-    'meta': {
-        'source': source, 'ip_version': address_family, 'ip': ip
+    "meta": {
+        "source": source, "ip_version": address_family, "ip": ip
     },
-    'error': 'Optional, only if there was an error',
-    'info': 'Optional, informational message if needed',
-    'response': {
-        'YYYY-MM-DD': {'asn': ASN, 'prefix': Prefix},
+    "error": "Optional, only if there was an error",
+    "info": "Optional, informational message if needed",
+    "response": {
+        "YYYY-MM-DD": {"asn": ASN, "prefix": Prefix},
         # Multiple entries if an interval was queried.
     }
 }
