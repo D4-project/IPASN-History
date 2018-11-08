@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import argparse
 import logging
 from datetime import timedelta, date
 from subprocess import Popen
@@ -34,7 +35,7 @@ class LookupManager(AbstractManager):
 
     def __init__(self,
                  days_in_memory: int=10,
-                 floating_window_days: int=8,
+                 floating_window_days: int=5,
                  sources: List[str]=['caida'],
                  loglevel: int=logging.WARNING):
         super().__init__(loglevel)
@@ -96,5 +97,11 @@ class LookupManager(AbstractManager):
 
 
 if __name__ == '__main__':
-    lookup = LookupManager()
+    parser = argparse.ArgumentParser(description='Manage the cached prefix announcements.')
+    parser.add_argument('--days_in_memory', default=10, type=int, help='Total amount of days to keep in memory.')
+    parser.add_argument('--floating_window_days', default=5, type=int, help='Amount of days per process.')
+    parser.add_argument('--sources', metavar='source', type=str, nargs='+', default=['caida'], help='Sources to load.')
+    args = parser.parse_args()
+
+    lookup = LookupManager(args.days_in_memory, args.floating_window_days, args.sources)
     lookup.run(sleep_in_sec=1)
