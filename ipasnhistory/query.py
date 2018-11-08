@@ -34,6 +34,8 @@ class Query():
         return nearest.isoformat()
 
     def find_interval(self, source: str, address_family: str, first: str, last: str=None):
+        if first > last:
+            raise Exception(f'The first date of the interval ({first}) has to be before the last one ({last})...')
         near_first = self.nearest_date(source, address_family, first)
         if not last:
             last = datetime.now().isoformat()
