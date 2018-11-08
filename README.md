@@ -111,13 +111,46 @@ Response:
 
 **Note**: The date returned may differ from the one queried: the system will figure out the closest available date to the one queried.
 
-
 # Installation
 
-You need to have ardb and redis installed in the parent directory.
+**IMPORTANT**: run it in a virtualenv, seriously. This install guide assumes you know what it is, and use one.
 
-ardb (more precisely rocksdb) doesn't compile on ubuntu 18.04 unless you disable warning as error:
+## Install redis
 
 ```bash
-DISABLE_WARNING_AS_ERROR=1 make
+git clone https://github.com/antirez/redis.git
+cd redis
+git checkout 4.0
+make
+make test
+cd ..
+```
+
+## Install ardb
+
+```bash
+git clone https://github.com/yinqiwen/ardb.git
+cd ardb
+DISABLE_WARNING_AS_ERROR=1 make  # ardb (more precisely rocksdb) doesn't compile on ubuntu 18.04 unless you disable warning as error
+cd ..
+```
+
+## Install & run IP ASN History
+
+```bash
+git clone https://github.com/D4-project/IPASN-History.git
+cd IPASN-History
+pip install -r requirements.txt
+pip install -e .
+export IPASNHISTORY_HOME='./'
+start.py
+```
+
+# Install & run the web service
+
+```bash
+cd website/
+pip install -r requirements.txt
+export FLASK_APP=${IPASNHISTORY_HOME}/website/web/__init__.py
+flask run
 ```
