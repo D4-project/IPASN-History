@@ -65,7 +65,7 @@ class LookupManager(AbstractManager):
 
         self.cache = StrictRedis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
         self.cache.sadd('META:sources', *self.sources)
-        self.cache.hmset('META:expected_interval', {'first': (init_date - timedelta(days=180)).isoformat(),
+        self.cache.hmset('META:expected_interval', {'first': (init_date - timedelta(days=self.days_in_memory)).isoformat(),
                                                     'last': init_date.isoformat()})
 
     def _to_run_forever(self):
@@ -90,7 +90,7 @@ class LookupManager(AbstractManager):
             # Cleanup the process list
             self.running_processes = [process for process in self.running_processes if process[0].poll() is None]
 
-        self.cache.hmset('META:expected_interval', {'first': (date.today() - timedelta(days=180)).isoformat(),
+        self.cache.hmset('META:expected_interval', {'first': (date.today() - timedelta(days=self.days_in_memory)).isoformat(),
                                                     'last': date.today().isoformat()})
         unset_running(self.__class__.__name__)
 

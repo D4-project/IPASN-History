@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from redis import StrictRedis
-from .libs.helpers import set_running, unset_running, get_socket_path
+from .libs.helpers import set_running, unset_running, get_socket_path, shutdown_requested
 import pytricia
 from .abstractmanager import AbstractManager
 
@@ -74,6 +74,8 @@ class Lookup(AbstractManager):
     def _to_run_forever(self):
         set_running(self.__class__.__name__)
         while True:
+            if shutdown_requested():
+                break
             self.load_all()
             queries = self.cache.srandmember('query', 20)
             if not queries:

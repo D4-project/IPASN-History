@@ -4,6 +4,7 @@
 from flask import Flask, request
 from ipasnhistory.query import Query
 from flask import jsonify
+import json
 
 app = Flask(__name__)
 
@@ -18,6 +19,8 @@ def index():
     elif request.method == 'GET':
         d = {k: v for k, v in request.args.items()}
 
+    if 'precision_delta' in d:
+        d['precision_delta'] = json.loads(d['precision_delta'])
     # Expected keys in d: ip, source, address_family, date, first, last, cache_only, precision_delta
     return jsonify(q.query(**dict(d)))
 

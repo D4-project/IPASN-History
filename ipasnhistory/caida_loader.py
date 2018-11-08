@@ -4,7 +4,7 @@
 import logging
 from pathlib import Path
 from redis import StrictRedis
-from .libs.helpers import set_running, unset_running, get_socket_path
+from .libs.helpers import set_running, unset_running, get_socket_path, shutdown_requested
 import re
 from dateutil.parser import parse
 from collections import defaultdict
@@ -20,6 +20,7 @@ class CaidaLoader():
         self.storage_root = storage_directory / 'caida'
         self.storagedb = StrictRedis(unix_socket_path=get_socket_path('storage'), decode_responses=True)
         self.storagedb.sadd('prefixes', self.key_prefix)
+        self.cache = StrictRedis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
 
     def __init_logger(self, loglevel) -> None:
         self.logger = logging.getLogger(f'{self.__class__.__name__}')
@@ -35,9 +36,17 @@ class CaidaLoader():
 
     def load_all(self):
         set_running(self.__class__.__name__)
-        for path in self.storage_root.glob('**/*.gz'):
+        for path in sorted(self.storage_root.glob('**/*.gz'), reverse=True):
+            if shutdown_requested():
+                break
             address_family, year, month, date_str = re.findall('.*/(.*)/(.*)/(.*)/routeviews-rv[2,6]-(.*).pfx2as.gz', str(path))[0]
             date = parse(date_str).isoformat()
+
+            oldest_to_load = self.cache.hget('META:expected_interval', 'first')
+            if oldest_to_load and oldest_to_load > date:
+                # The CAIDA dump we're trying to load is older than the oldest date we want to cache, skipping.
+                continue
+
             if self.already_loaded(address_family, date):
                 logging.debug(f'Already loaded {path}')
                 continue
