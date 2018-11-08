@@ -43,6 +43,33 @@ class Query():
             return [d for d in self.cache.smembers(f'{source}|{address_family}|cached_dates') if d >= first and d <= last]
         raise Exception(f'No data available in the given interval: {first} -> {last}. Nearest data to first: {near_first.isoformat()}, nearest data to last: {near_last.isoformat()} ')
 
+    def perdelta(self, start, end):
+        curr = start
+        while curr < end:
+            yield curr
+            curr += timedelta(days=1)
+
+    def meta(self):
+        sources = self.cache.smembers('META:sources')
+        expected_interval = self.cache.hgetall('META:expected_interval')
+        expected_dates = [date for date in self.perdelta(parse(expected_interval['first'].date(),
+                                                               expected_interval['last']).date())]
+        cached_dates_by_sources = {}
+        for source in sources:
+            cached_v4 = self.cache.smembers(f'{source}|v4|cached_dates')
+            missing_v4 = [c for c in cached_v4 if parse(c).date() not in expected_dates]
+            percent_v4 = float(len(expected_dates) - len(missing_v4)) * 100 / len(expected_dates)
+
+            cached_v6 = self.cache.smembers(f'{source}|v6|cached_dates')
+            missing_v6 = [c for c in cached_v6 if parse(c).date() not in expected_dates]
+            percent_v6 = float(len(expected_dates) - len(missing_v6)) * 100 / len(expected_dates)
+
+            cached_dates_by_sources[source] = {'v4': {'cached': cached_v4, 'missing': missing_v4, 'percent': percent_v4},
+                                               'v6': {'cached': cached_v6, 'missing': missing_v6, 'percent': percent_v6}}
+
+        return {'sources': sources, 'expected_interval': expected_interval,
+                'cached_dates': cached_dates_by_sources}
+
     def query(self, ip, source: str='caida', address_family: str='v4', date: str=None, first: str=None, last: str=None, cache_only: bool=False, precision_delta: dict={}):
         '''Launch a query.
         :param ip: IP to lookup

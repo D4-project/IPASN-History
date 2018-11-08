@@ -20,3 +20,9 @@ def index():
 
     # Expected keys in d: ip, source, address_family, date, first, last, cache_only, precision_delta
     return jsonify(q.query(**dict(d)))
+
+
+@app.route('/meta', methods=['GET'])
+def meta():
+    '''Returns meta information regarding the data contained in the system'''
+    return jsonify(q.meta())

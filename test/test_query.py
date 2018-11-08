@@ -7,8 +7,16 @@ import requests
 
 q = Query()
 
+response = q.meta()
+print(json.dumps(response, indent=2))
+
 response = q.query('146.185.222.49', first='2018-09-01', last='2018-09-25')
-print(json.dumps(response))
+print(json.dumps(response, indent=2))
+
+# --------- web
+
+r = requests.get('http://127.0.0.1:5006/meta')
+print(r.json())
 
 r = requests.get('http://127.0.0.1:5006/?ip=8.8.8.8&first=2018-09-01')
 print(r.json())
@@ -16,4 +24,3 @@ print(r.json())
 query = {'ip': '8.8.8.8', 'first': '2018-09-01'}
 r = requests.post('http://127.0.0.1:5006', data=query)
 print(r.json())
-
