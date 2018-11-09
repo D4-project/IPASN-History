@@ -52,6 +52,7 @@ class Query():
             curr += timedelta(days=1)
 
     def meta(self):
+        '''Get meta information from the current instance'''
         sources = self.cache.smembers('META:sources')
         expected_interval = self.cache.hgetall('META:expected_interval')
         expected_dates = set([date.isoformat() for date in self.perdelta(parse(expected_interval['first']).date(),
