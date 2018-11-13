@@ -3,7 +3,7 @@
 import logging
 from redis import StrictRedis
 from .libs.helpers import get_socket_path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dateutil.parser import parse
 import time
 
@@ -25,6 +25,9 @@ class Query():
         if not dates:
             raise Exception(f'No route views have been loaded for {source} / {address_family} yet.')
         date = parse(date)
+        if date.tzinfo:
+            # Make sure the datetime isn't TZ aware, and UTC.
+            date = date.astimezone(timezone.utc).replace(tzinfo=None)
         nearest = min(dates, key=lambda x: abs(x - date))
         if precision_delta:
             min_date = date - timedelta(**precision_delta)
