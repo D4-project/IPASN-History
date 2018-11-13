@@ -26,4 +26,4 @@ class CaidaManager(AbstractManager):
 
 if __name__ == '__main__':
     m = CaidaManager()
-    m.run(sleep_in_sec=3600)
+    m.run(sleep_in_sec=30)
