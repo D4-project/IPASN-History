@@ -9,6 +9,12 @@ class IPASNHistory():
 
     def __init__(self, root_url: str):
         self.root_url = root_url.rstrip('/')
+        self.session = requests.session()
+
+    @property
+    def is_up(self):
+        r = self.session.head(self.root_url)
+        return r.status_code == 200
 
     def meta(self):
         '''Get meta information from the remote instance'''
@@ -41,5 +47,5 @@ class IPASNHistory():
         if precision_delta:
             to_query['precision_delta'] = json.dumps(precision_delta)
 
-        r = requests.post(self.root_url, data=to_query)
+        r = self.session.post(self.root_url, data=to_query)
         return r.json()
