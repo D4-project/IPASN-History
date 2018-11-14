@@ -77,7 +77,7 @@ class Query():
         return {'sources': list(sources), 'expected_interval': expected_interval,
                 'cached_dates': cached_dates_by_sources}
 
-    def mass_cache(self, list_to_cache):
+    def mass_cache(self, list_to_cache: list):
         to_return = {}
         to_return['not_cached'] = []
         p = self.cache.pipeline()
@@ -103,6 +103,45 @@ class Query():
             except Exception as e:
                 to_return['not_cached'].append((to_cache, str(e)))
                 logging.exception('woops')
+        p.execute()
+        return to_return
+
+    def mass_query(self, list_to_query: list):
+        to_return = {}
+        to_return['responses'] = []
+        p = self.cache.pipeline()
+        for to_query in list_to_query:
+            response = []
+            try:
+                cached_dates = self.cache.smembers(f'{to_query["source"]}|{to_query["address_family"]}|cached_dates')
+                if not cached_dates:
+                    raise Exception(f'No route views have been loaded for {to_query["source"]} / {to_query["address_family"]} yet.')
+
+                date_search = copy.copy(to_query)
+                date_search.pop('ip')
+                if 'date' in date_search or 'first' in date_search:
+                    to_check = self.nearest_date(cached_dates, **date_search)
+                else:
+                    # Assuming we want the latest possible date.
+                    to_check = self.nearest_date(cached_dates, date=datetime.now().isoformat(), **date_search)
+
+                if isinstance(to_check, list):
+                    keys = [f'{to_query["source"]}|{to_query["address_family"]}|{d}|{to_query["ip"]}' for d in to_check]
+                else:
+                    keys = [f'{to_query["source"]}|{to_query["address_family"]}|{to_check}|{to_query["ip"]}']
+                for k in keys:
+                    _, _, date, _ = k.split('|')
+                    data = self.cache.hgetall(k)
+                    response.append({date: data})
+                    if data:
+                        p.expire(k, 43200)  # 12h
+                    else:
+                        p.sadd('query', k)
+            except Exception as e:
+                # If something fails, it *has* to be in the list
+                response['error'].append((to_query, str(e)))
+            finally:
+                to_return['responses'].append(response)
         p.execute()
         return to_return
 

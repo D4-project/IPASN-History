@@ -33,6 +33,20 @@ def index():
         return jsonify({'error': str(e)})
 
 
+@app.route('/mass_query', methods=['POST'])
+def mass_query():
+    '''Query all the things'''
+    try:
+        to_query = request.get_json(force=True)
+        for c in to_query:
+            if 'precision_delta' in c:
+                c['precision_delta'] = json.loads(c.pop('precision_delta'))
+        response = q.mass_query(to_query)
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+
 @app.route('/mass_cache', methods=['POST'])
 def mass_cache():
     '''Cache a all the queries'''

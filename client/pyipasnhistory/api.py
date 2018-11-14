@@ -31,6 +31,16 @@ class IPASNHistory():
         r = self.session.post(f'{self.root_url}/mass_cache', data=json.dumps(to_query))
         return r.json()
 
+    def mass_query(self, list_to_query: list):
+        to_query = []
+        for entry in list_to_query:
+            if 'precision_delta' in entry:
+                entry['precision_delta'] = json.dumps(entry.pop('precision_delta'))
+            to_query.append(entry)
+
+        r = self.session.post(f'{self.root_url}/mass_query', data=json.dumps(to_query))
+        return r.json()
+
     def query(self, ip: str, source: str='caida', address_family: str='v4',
               date: str=None, first: str=None, last: str=None, precision_delta: dict={}):
         '''Launch a query.
