@@ -20,10 +20,8 @@ class Query():
         self.logger = logging.getLogger(f'{self.__class__.__name__}')
         self.logger.setLevel(loglevel)
 
-    def nearest_date(self, source: str, address_family: str, date: str, precision_delta: dict={}):
-        dates = [parse(d) for d in self.cache.smembers(f'{source}|{address_family}|cached_dates')]
-        if not dates:
-            raise Exception(f'No route views have been loaded for {source} / {address_family} yet.')
+    def nearest_date(self, cached_dates: set, source: str, address_family: str, date: str, precision_delta: dict={}):
+        dates = [parse(d) for d in cached_dates]
         date = parse(date)
         if date.tzinfo:
             # Make sure the datetime isn't TZ aware, and UTC.
@@ -36,16 +34,16 @@ class Query():
                 raise Exception(f'Unable to find a date in the expected interval: {min_date.isoformat()} -> {max_date.isoformat()}.')
         return nearest.isoformat()
 
-    def find_interval(self, source: str, address_family: str, first: str, last: str=None):
+    def find_interval(self, cached_dates: set, source: str, address_family: str, first: str, last: str=None):
         if last and first > last:
             raise Exception(f'The first date of the interval ({first}) has to be before the last one ({last})...')
-        near_first = self.nearest_date(source, address_family, first)
+        near_first = self.nearest_date(cached_dates, source, address_family, first)
         if not last:
             last = datetime.now().isoformat()
-        near_last = self.nearest_date(source, address_family, last)
+        near_last = self.nearest_date(cached_dates, source, address_family, last)
         if near_first <= last and near_last >= first:
             # We have something in the given interval
-            return [d for d in self.cache.smembers(f'{source}|{address_family}|cached_dates') if d >= first and d <= last]
+            return [d for d in cached_dates if d >= first and d <= last]
         raise Exception(f'No data available in the given interval: {first} -> {last}. Nearest data to first: {near_first}, nearest data to last: {near_last} ')
 
     def perdelta(self, start, end):
@@ -93,22 +91,30 @@ class Query():
         to_return = {'meta': {'source': source, 'ip_version': address_family, 'ip': ip},
                      'response': {}}
         try:
+            cached_dates = self.cache.smembers(f'{source}|{address_family}|cached_dates')
+            if not cached_dates:
+                raise Exception(f'No route views have been loaded for {source} / {address_family} yet.')
             if date:
-                to_check = [self.nearest_date(source, address_family, date, precision_delta)]
+                to_check = self.nearest_date(cached_dates, source, address_family, date, precision_delta)
             elif first:
-                to_check = self.find_interval(source, address_family, first, last)
+                to_check = self.find_interval(cached_dates, source, address_family, first, last)
             else:
                 # Assuming we want the latest possible date.
-                to_check = [self.nearest_date(source, address_family, datetime.now().isoformat())]
+                to_check = self.nearest_date(cached_dates, source, address_family, datetime.now().isoformat())
         except Exception as e:
             # self.logger.exception(e)
             to_return['error'] = str(e)
             return to_return
 
-        keys = [f'{source}|{address_family}|{d}|{ip}' for d in to_check]
-        p = self.cache.pipeline()
-        [p.sadd('query', k) for k in keys]
-        p.execute()
+        if isinstance(to_check, list):
+            keys = [f'{source}|{address_family}|{d}|{ip}' for d in to_check]
+            p = self.cache.pipeline()
+            [p.sadd('query', k) for k in keys]
+            p.execute()
+        else:
+            self.cache.sadd('query', f'{source}|{address_family}|{to_check}|{ip}')
+            keys = [f'{source}|{address_family}|{to_check}|{ip}']
+
         if cache_only:
             to_return['info'] = 'Query for cache purposes only, not waiting for the lookup.'
             return to_return
