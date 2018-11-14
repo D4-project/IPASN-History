@@ -33,6 +33,20 @@ def index():
         return jsonify({'error': str(e)})
 
 
+@app.route('/mass_cache', methods=['POST'])
+def mass_cache():
+    '''Cache a all the queries'''
+    try:
+        to_cache = request.get_json(force=True)
+        for c in to_cache:
+            if 'precision_delta' in c:
+                c['precision_delta'] = json.loads(c.pop('precision_delta'))
+        response = q.mass_cache(to_cache)
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+
 @app.route('/meta', methods=['GET'])
 def meta():
     '''Returns meta information regarding the data contained in the system'''

@@ -33,7 +33,7 @@ class Lookup(AbstractManager):
         for locked_interval in self.cache.smembers(f'lock|{self.source}|{address_family}'):
             locked_first, locked_last = locked_interval.split('_')
             if (locked_first <= self.first_date <= locked_last) or (locked_first <= self.last_date <= locked_last):
-                logging.debug(f'Locked: {self.first_date} {self.last_date} because of {locked_first} {locked_last}')
+                self.logger.debug(f'Locked: {self.first_date} {self.last_date} because of {locked_first} {locked_last}')
                 return True
         return False
 
@@ -58,7 +58,7 @@ class Lookup(AbstractManager):
                 self.cache.srem(f'lock|{self.source}|{address_family}', f'{self.first_date}_{self.last_date}')
 
     def load_tree(self, announces_date: str, address_family: str):
-        logging.debug(f'Loading {self.source} {address_family} {announces_date}')
+        self.logger.debug(f'Loading {self.source} {address_family} {announces_date}')
         asns = self.storagedb.smembers(f'{self.source}|{address_family}|{announces_date}|asns')
 
         p = self.storagedb.pipeline()
@@ -69,7 +69,7 @@ class Lookup(AbstractManager):
             for ip_prefix in ip_prefixes:
                 self.trees[address_family][self.source][announces_date][ip_prefix] = asn
         self.cache.sadd(f'{self.source}|{address_family}|cached_dates', announces_date)
-        logging.debug(f'Done with Loading {self.source} {address_family}')
+        self.logger.debug(f'Done with Loading {self.source} {address_family}')
 
     def _to_run_forever(self):
         set_running(self.__class__.__name__)
@@ -94,9 +94,13 @@ class Lookup(AbstractManager):
                 if date not in self.loaded_dates[address_family]:
                     # Date not loaded in this process, ignore
                     continue
-                p.hmset(q, {'asn': self.trees[address_family][prefix][date].get(ip),
-                            'prefix': self.trees[address_family][prefix][date].get_key(ip)})
-                p.expire(q, 43200)  # 12h
-                p.srem('query', q)
+                try:
+                    p.hmset(q, {'asn': self.trees[address_family][prefix][date].get(ip),
+                                'prefix': self.trees[address_family][prefix][date].get_key(ip)})
+                    p.expire(q, 43200)  # 12h
+                except ValueError as e:
+                    self.logger.warning(f'Query invalid: "{address_family}" "{prefix}" "{date}" "{ip}"')
+                finally:
+                    p.srem('query', q)
             p.execute()
         unset_running(self.__class__.__name__)

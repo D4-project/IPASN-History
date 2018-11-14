@@ -21,9 +21,18 @@ class IPASNHistory():
         r = requests.get(f'{self.root_url}/meta')
         return r.json()
 
+    def mass_cache(self, list_to_cache: list):
+        to_query = []
+        for entry in list_to_cache:
+            if 'precision_delta' in entry:
+                entry['precision_delta'] = json.dumps(entry.pop('precision_delta'))
+            to_query.append(entry)
+
+        r = self.session.post(f'{self.root_url}/mass_cache', data=json.dumps(to_query))
+        return r.json()
+
     def query(self, ip: str, source: str='caida', address_family: str='v4',
-              date: str=None, first: str=None, last: str=None,
-              cache_only: bool=False, precision_delta: dict={}):
+              date: str=None, first: str=None, last: str=None, precision_delta: dict={}):
         '''Launch a query.
         :param ip: IP to lookup
         :param source: Source to query (currently, only caida is supported)
@@ -31,7 +40,6 @@ class IPASNHistory():
         :param date: Exact date to lookup. Fallback to most recent available.
         :param first: First date in the interval
         :param last: Last date in the interval
-        :param cache_only: Do not wait for the response. Useful when an other process is expected to request the IP later on.
         :param precision_delta: Max delta allowed between the date queried and the one we have in the database. Expects a dictionary to pass to timedelta.
                                 Example: {days=1, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0}
         '''
@@ -42,8 +50,6 @@ class IPASNHistory():
             to_query['first'] = first
             if last:
                 to_query['last'] = last
-        if cache_only:
-            to_query['cache_only'] = cache_only
         if precision_delta:
             to_query['precision_delta'] = json.dumps(precision_delta)
 

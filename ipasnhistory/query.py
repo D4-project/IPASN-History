@@ -6,6 +6,7 @@ from .libs.helpers import get_socket_path
 from datetime import datetime, timedelta, timezone
 from dateutil.parser import parse
 import time
+import copy
 
 from collections import OrderedDict
 
@@ -76,7 +77,36 @@ class Query():
         return {'sources': list(sources), 'expected_interval': expected_interval,
                 'cached_dates': cached_dates_by_sources}
 
-    def query(self, ip, source: str='caida', address_family: str='v4', date: str=None, first: str=None, last: str=None, cache_only: bool=False, precision_delta: dict={}):
+    def mass_cache(self, list_to_cache):
+        to_return = {}
+        to_return['not_cached'] = []
+        p = self.cache.pipeline()
+        for to_cache in list_to_cache:
+            try:
+                cached_dates = self.cache.smembers(f'{to_cache["source"]}|{to_cache["address_family"]}|cached_dates')
+                if not cached_dates:
+                    raise Exception(f'No route views have been loaded for {to_cache["source"]} / {to_cache["address_family"]} yet.')
+
+                date_search = copy.copy(to_cache)
+                date_search.pop('ip')
+                if 'date' in date_search or 'first' in date_search:
+                    to_check = self.nearest_date(cached_dates, **date_search)
+                else:
+                    # Assuming we want the latest possible date.
+                    to_check = self.nearest_date(cached_dates, date=datetime.now().isoformat(), **date_search)
+
+                if isinstance(to_check, list):
+                    keys = [f'{to_cache["source"]}|{to_cache["address_family"]}|{d}|{to_cache["ip"]}' for d in to_check]
+                    [p.sadd('query', k) for k in keys]
+                else:
+                    self.cache.sadd('query', f'{to_cache["source"]}|{to_cache["address_family"]}|{to_check}|{to_cache["ip"]}')
+            except Exception as e:
+                to_return['not_cached'].append((to_cache, str(e)))
+                logging.exception('woops')
+        p.execute()
+        return to_return
+
+    def query(self, ip, source: str='caida', address_family: str='v4', date: str=None, first: str=None, last: str=None, precision_delta: dict={}):
         '''Launch a query.
         :param ip: IP to lookup
         :param source: Source to query (currently, only caida is supported)
@@ -84,7 +114,6 @@ class Query():
         :param date: Exact date to lookup. Fallback to most recent available.
         :param first: First date in the interval
         :param last: Last date in the interval
-        :param cache_only: Do not wait for the response. Useful when an other process is expected to request the IP later on.
         :param precision_delta: Max delta allowed between the date queried and the one we have in the database. Expects a dictionary to pass to timedelta.
                                 Example: {days=1, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0}
         '''
@@ -114,10 +143,6 @@ class Query():
         else:
             self.cache.sadd('query', f'{source}|{address_family}|{to_check}|{ip}')
             keys = [f'{source}|{address_family}|{to_check}|{ip}']
-
-        if cache_only:
-            to_return['info'] = 'Query for cache purposes only, not waiting for the lookup.'
-            return to_return
 
         p_update_expire = self.cache.pipeline()
         waiting = True
