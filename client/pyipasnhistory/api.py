@@ -37,8 +37,24 @@ class IPASNHistory():
             if 'precision_delta' in entry:
                 entry['precision_delta'] = json.dumps(entry.pop('precision_delta'))
             to_query.append(entry)
-
         r = self.session.post(f'{self.root_url}/mass_query', data=json.dumps(to_query))
+        return r.json()
+
+    def asn_meta(self, asn: int=None, source: str='caida', address_family: str='v4',
+                 date: str=None, first: str=None, last: str=None, precision_delta: dict={}):
+        to_query = {'source': source, 'address_family': address_family}
+        if asn:
+            to_query['asn'] = asn
+        if date:
+            to_query['date'] = date
+        elif first:
+            to_query['first'] = first
+            if last:
+                to_query['last'] = last
+        if precision_delta:
+            to_query['precision_delta'] = json.dumps(precision_delta)
+
+        r = self.session.post(f'{self.root_url}/asn_meta', data=json.dumps(to_query))
         return r.json()
 
     def query(self, ip: str, source: str='caida', address_family: str='v4',

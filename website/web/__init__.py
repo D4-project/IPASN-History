@@ -61,6 +61,19 @@ def mass_cache():
         return jsonify({'error': str(e)})
 
 
+@app.route('/asn_meta', methods=['POST'])
+def asn_meta():
+    '''Get the ASN meta information'''
+    try:
+        query = request.get_json(force=True)
+        if 'precision_delta' in query:
+            query['precision_delta'] = json.loads(query.pop('precision_delta'))
+        response = q.asn_meta(**query)
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+
 @app.route('/meta', methods=['GET'])
 def meta():
     '''Returns meta information regarding the data contained in the system'''

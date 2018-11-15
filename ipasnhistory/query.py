@@ -16,6 +16,7 @@ class Query():
     def __init__(self, loglevel: int=logging.DEBUG):
         self.__init_logger(loglevel)
         self.cache = StrictRedis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
+        self.storagedb = StrictRedis(unix_socket_path=get_socket_path('storage'), decode_responses=True)
 
     def __init_logger(self, loglevel) -> None:
         self.logger = logging.getLogger(f'{self.__class__.__name__}')
@@ -77,33 +78,39 @@ class Query():
         return {'sources': list(sources), 'expected_interval': expected_interval,
                 'cached_dates': cached_dates_by_sources}
 
+    def _find_dates(self, **query_params):
+        cached_dates = self.cache.smembers(f'{query_params["source"]}|{query_params["address_family"]}|cached_dates')
+        if not cached_dates:
+            raise Exception(f'No route views have been loaded for {query_params["source"]} / {query_params["address_family"]} yet.')
+
+        date_search = copy.copy(query_params)
+        # Pop all the keys not expected by either nearest_date or find_interval
+        authorized_keys = ['source', 'address_family', 'date', 'first', 'last', 'precision_delta']
+        [date_search.pop(k) for k in list(date_search.keys()) if k not in authorized_keys or not date_search[k]]
+        if 'date' in date_search:
+            dates = [self.nearest_date(cached_dates, **date_search)]
+        elif 'first' in date_search:
+            dates = self.find_interval(cached_dates, **date_search)
+        else:
+            # Assuming we want the latest possible date.
+            dates = [self.nearest_date(cached_dates, date=datetime.now().isoformat(), **date_search)]
+        return dates
+
     def mass_cache(self, list_to_cache: list):
         to_return = {}
         to_return['not_cached'] = []
-        p = self.cache.pipeline()
         for to_cache in list_to_cache:
             try:
-                cached_dates = self.cache.smembers(f'{to_cache["source"]}|{to_cache["address_family"]}|cached_dates')
-                if not cached_dates:
-                    raise Exception(f'No route views have been loaded for {to_cache["source"]} / {to_cache["address_family"]} yet.')
-
-                date_search = copy.copy(to_cache)
-                date_search.pop('ip')
-                if 'date' in date_search or 'first' in date_search:
-                    to_check = self.nearest_date(cached_dates, **date_search)
-                else:
-                    # Assuming we want the latest possible date.
-                    to_check = self.nearest_date(cached_dates, date=datetime.now().isoformat(), **date_search)
-
-                if isinstance(to_check, list):
-                    keys = [f'{to_cache["source"]}|{to_cache["address_family"]}|{d}|{to_cache["ip"]}' for d in to_check]
+                dates = self._find_dates(**to_cache)
+                if len(dates) > 1:
+                    keys = [f'{to_cache["source"]}|{to_cache["address_family"]}|{d}|{to_cache["ip"]}' for d in dates]
+                    p = self.cache.pipeline()
                     [p.sadd('query', k) for k in keys]
+                    p.execute()
                 else:
-                    self.cache.sadd('query', f'{to_cache["source"]}|{to_cache["address_family"]}|{to_check}|{to_cache["ip"]}')
+                    self.cache.sadd('query', f'{to_cache["source"]}|{to_cache["address_family"]}|{dates[0]}|{to_cache["ip"]}')
             except Exception as e:
                 to_return['not_cached'].append((to_cache, str(e)))
-                logging.exception('woops')
-        p.execute()
         return to_return
 
     def mass_query(self, list_to_query: list):
@@ -113,22 +120,11 @@ class Query():
         for to_query in list_to_query:
             response = []
             try:
-                cached_dates = self.cache.smembers(f'{to_query["source"]}|{to_query["address_family"]}|cached_dates')
-                if not cached_dates:
-                    raise Exception(f'No route views have been loaded for {to_query["source"]} / {to_query["address_family"]} yet.')
-
-                date_search = copy.copy(to_query)
-                date_search.pop('ip')
-                if 'date' in date_search or 'first' in date_search:
-                    to_check = self.nearest_date(cached_dates, **date_search)
+                dates = self._find_dates(**to_query)
+                if len(dates) > 1:
+                    keys = [f'{to_query["source"]}|{to_query["address_family"]}|{d}|{to_query["ip"]}' for d in dates]
                 else:
-                    # Assuming we want the latest possible date.
-                    to_check = self.nearest_date(cached_dates, date=datetime.now().isoformat(), **date_search)
-
-                if isinstance(to_check, list):
-                    keys = [f'{to_query["source"]}|{to_query["address_family"]}|{d}|{to_query["ip"]}' for d in to_check]
-                else:
-                    keys = [f'{to_query["source"]}|{to_query["address_family"]}|{to_check}|{to_query["ip"]}']
+                    keys = [f'{to_query["source"]}|{to_query["address_family"]}|{dates[0]}|{to_query["ip"]}']
                 for k in keys:
                     _, _, date, _ = k.split('|')
                     data = self.cache.hgetall(k)
@@ -138,6 +134,7 @@ class Query():
                     else:
                         p.sadd('query', k)
             except Exception as e:
+                self.logger.exception(f'Unable to run {to_query}. - {e}')
                 # If something fails, it *has* to be in the list
                 response['error'].append((to_query, str(e)))
             finally:
@@ -156,32 +153,23 @@ class Query():
         :param precision_delta: Max delta allowed between the date queried and the one we have in the database. Expects a dictionary to pass to timedelta.
                                 Example: {days=1, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0}
         '''
-        to_return = {'meta': {'source': source, 'ip_version': address_family, 'ip': ip},
+        to_return = {'meta': {'source': source, 'address_family': address_family, 'ip': ip},
                      'response': {}}
         try:
-            cached_dates = self.cache.smembers(f'{source}|{address_family}|cached_dates')
-            if not cached_dates:
-                raise Exception(f'No route views have been loaded for {source} / {address_family} yet.')
-            if date:
-                to_check = self.nearest_date(cached_dates, source, address_family, date, precision_delta)
-            elif first:
-                to_check = self.find_interval(cached_dates, source, address_family, first, last)
-            else:
-                # Assuming we want the latest possible date.
-                to_check = self.nearest_date(cached_dates, source, address_family, datetime.now().isoformat())
+            dates = self._find_dates(source=source, address_family=address_family, date=date,
+                                     first=first, last=last, precision_delta=precision_delta)
         except Exception as e:
-            # self.logger.exception(e)
             to_return['error'] = str(e)
             return to_return
 
-        if isinstance(to_check, list):
-            keys = [f'{source}|{address_family}|{d}|{ip}' for d in to_check]
+        if len(dates) > 1:
+            keys = [f'{source}|{address_family}|{d}|{ip}' for d in dates]
             p = self.cache.pipeline()
             [p.sadd('query', k) for k in keys]
             p.execute()
         else:
-            self.cache.sadd('query', f'{source}|{address_family}|{to_check}|{ip}')
-            keys = [f'{source}|{address_family}|{to_check}|{ip}']
+            self.cache.sadd('query', f'{source}|{address_family}|{dates[0]}|{ip}')
+            keys = [f'{source}|{address_family}|{dates[0]}|{ip}']
 
         p_update_expire = self.cache.pipeline()
         waiting = True
@@ -201,4 +189,29 @@ class Query():
                 time.sleep(.1)
         to_return['response'] = OrderedDict(sorted(to_return['response'].items(), key=lambda t: t[0]))
         p_update_expire.execute()
+        return to_return
+
+    def asn_meta(self, asn: int=None, source: str='caida', address_family: str='v4', date: str=None, first: str=None, last: str=None, precision_delta: dict={}):
+        to_return = {'meta': {'source': source, 'address_family': address_family},
+                     'response': {}}
+        if asn is not None:
+            to_return['meta']['asn'] = asn
+        try:
+            dates = self._find_dates(source=source, address_family=address_family, date=date,
+                                     first=first, last=last, precision_delta=precision_delta)
+        except Exception as e:
+            to_return['error'] = str(e)
+            return to_return
+
+        for date in dates:
+            data = {}
+            if asn is None:
+                asns = self.storagedb.smembers(f'{source}|{address_family}|{date}|asns')
+            else:
+                asns = [asn]
+            for asn in asns:
+                prefixes = self.storagedb.smembers(f'{source}|{address_family}|{date}|{asn}')
+                ipcount = self.storagedb.get(f'{source}|{address_family}|{date}|{asn}|ipcount')
+                data[asn] = {'prefixes': list(prefixes), 'ipcount': ipcount}
+            to_return['response'][date] = data
         return to_return

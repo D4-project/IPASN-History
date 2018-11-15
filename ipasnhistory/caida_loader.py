@@ -64,10 +64,10 @@ class CaidaLoader():
             logging.debug('Content loaded')
             p = self.storagedb.pipeline()
             p.sadd(f'{self.key_prefix}|{address_family}|dates', date)
-            p.sadd(f'{self.key_prefix}|{address_family}|{date}|asns', *to_import.keys())
+            p.sadd(f'{self.key_prefix}|{address_family}|{date}|asns', *to_import.keys())  # Store all ASNs
             for asn, data in to_import.items():
-                p.sadd(f'{self.key_prefix}|{address_family}|{date}|{asn}', *data[address_family])
-                p.set(f'{self.key_prefix}|{address_family}|{date}|{asn}|ipcount', data['ipcount'])
+                p.sadd(f'{self.key_prefix}|{address_family}|{date}|{asn}', *data[address_family])  # Store all prefixes
+                p.set(f'{self.key_prefix}|{address_family}|{date}|{asn}|ipcount', data['ipcount'])  # Total IPs for the AS
             logging.debug('All keys ready')
             p.execute()
             self.update_last(address_family, date)
