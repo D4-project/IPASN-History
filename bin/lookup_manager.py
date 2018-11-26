@@ -81,7 +81,7 @@ class LookupManager(AbstractManager):
                     if last < (date.today() + timedelta(self.floating_window_days / 2)):
                         new_first = date.today()
                         new_last = date.today() + timedelta(days=self.floating_window_days)
-                        new_p = Popen(['lookup.py', self.source, new_first.isoformat(), new_last.isoformat()])
+                        new_p = Popen(['lookup.py', source, new_first.isoformat(), new_last.isoformat()])
                         self.running_processes.append((new_p, new_first, new_last))
                 if last < (date.today() - timedelta(days=self.days_in_memory)):
                     p.kill()
