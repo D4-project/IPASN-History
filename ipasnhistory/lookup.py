@@ -86,7 +86,7 @@ class Lookup(AbstractManager):
                     # The query is already cached, cleanup.
                     self.cache.srem('query', q)
                     continue
-                logging.debug(f'Searching {q}')
+                self.logger.debug(f'Searching {q}')
                 prefix, address_family, date, ip = q.split('|')
                 if prefix != self.source:
                     # query for an other data source, ignore

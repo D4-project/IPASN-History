@@ -48,9 +48,9 @@ class CaidaLoader():
                 continue
 
             if self.already_loaded(address_family, date):
-                logging.debug(f'Already loaded {path}')
+                self.logger.debug(f'Already loaded {path}')
                 continue
-            logging.info(f'Loading {path}')
+            self.logger.info(f'Loading {path}')
             to_import = defaultdict(lambda: {address_family: set(), 'ipcount': 0})
             with gzip.open(path) as f:
                 for line in f:
@@ -61,15 +61,15 @@ class CaidaLoader():
                     to_import[asn][address_family].add(str(network))
                     to_import[asn]['ipcount'] += network.num_addresses
 
-            logging.debug('Content loaded')
+            self.logger.debug('Content loaded')
             p = self.storagedb.pipeline()
             p.sadd(f'{self.key_prefix}|{address_family}|dates', date)
             p.sadd(f'{self.key_prefix}|{address_family}|{date}|asns', *to_import.keys())  # Store all ASNs
             for asn, data in to_import.items():
                 p.sadd(f'{self.key_prefix}|{address_family}|{date}|{asn}', *data[address_family])  # Store all prefixes
                 p.set(f'{self.key_prefix}|{address_family}|{date}|{asn}|ipcount', data['ipcount'])  # Total IPs for the AS
-            logging.debug('All keys ready')
+            self.logger.debug('All keys ready')
             p.execute()
             self.update_last(address_family, date)
-            logging.debug('Done.')
+            self.logger.debug('Done.')
         unset_running(self.__class__.__name__)

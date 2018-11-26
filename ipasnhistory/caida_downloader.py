@@ -53,7 +53,7 @@ class CaidaDownloader():
         safe_create_dir(store_path.parent)
         root_url = self._get_root_url(address_family)
         async with self.sema, session.get(root_url.format(path)) as r:
-            logging.debug(root_url.format(path))
+            self.logger.debug(root_url.format(path))
             content = await r.read()
             if not content.startswith(b'\x1f\x8b'):
                 # Not a gzip file, skip.
@@ -70,14 +70,14 @@ class CaidaDownloader():
             list_url = f'{cur_date:%Y/%m}'  # Makes a string like that: YYYY/MM
             async with aiohttp.ClientSession() as session:
                 tasks = []
-                logging.debug(root_url.format(list_url))
+                self.logger.debug(root_url.format(list_url))
                 async with session.get(root_url.format(list_url)) as r:
                     soup = BeautifulSoup(await r.text(), 'html.parser')
                     for a in soup.find_all('a'):
                         href = a.get('href')
                         if href.startswith('routeviews'):
                             dl_path = f'{cur_date:%Y/%m}/{href}'
-                            logging.debug(dl_path)
+                            self.logger.debug(dl_path)
                             task = asyncio.ensure_future(self.download_routes(session, address_family, dl_path))
                             tasks.append(task)
                 r = asyncio.gather(*tasks, return_exceptions=True)
