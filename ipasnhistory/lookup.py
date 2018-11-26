@@ -95,8 +95,16 @@ class Lookup(AbstractManager):
                     # Date not loaded in this process, ignore
                     continue
                 try:
-                    p.hmset(q, {'asn': self.trees[address_family][prefix][date].get(ip),
-                                'prefix': self.trees[address_family][prefix][date].get_key(ip)})
+                    asn = self.trees[address_family][prefix][date].get(ip)
+                    ip_prefix = self.trees[address_family][prefix][date].get_key(ip)
+                    if asn is None or ip_prefix is None:
+                        self.logger.warning(f'Unable to find ASN ({asn}) and/or IP Prefix ({ip_prefix}): "{address_family}" "{prefix}" "{date}" "{ip}"')
+                        asn = 0
+                        if address_family == 'v4':
+                            ip_prefix = '0.0.0.0/0'
+                        else:
+                            ip_prefix = '::/0'
+                    p.hmset(q, {'asn': asn, 'prefix': ip_prefix})
                     p.expire(q, 43200)  # 12h
                 except ValueError as e:
                     self.logger.warning(f'Query invalid: "{address_family}" "{prefix}" "{date}" "{ip}"')
