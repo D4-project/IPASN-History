@@ -43,6 +43,12 @@ class LookupManager(AbstractManager):
         self.days_in_memory = days_in_memory
         self.sources = sources
 
+        self.cache = StrictRedis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
+        # Cleanup pytricia cache information as it has to be reloaded
+        for source in self.sources:
+            self.cache.delete(f'{source}|v4|cached_dates')
+            self.cache.delete(f'{source}|v6|cached_dates')
+
         init_date = date.today()
         self.running_processes = []
         # Start process today -> today + self.floating_window_days
@@ -64,7 +70,6 @@ class LookupManager(AbstractManager):
                 self.running_processes.append((p, begin_interval, current))
                 current = current - timedelta(self.floating_window_days / 2)
 
-        self.cache = StrictRedis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
         self.cache.sadd('META:sources', *self.sources)
         self.cache.hmset('META:expected_interval', {'first': (init_date - timedelta(days=self.days_in_memory)).isoformat(),
                                                     'last': init_date.isoformat()})
