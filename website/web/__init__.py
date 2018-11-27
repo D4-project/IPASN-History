@@ -4,7 +4,10 @@
 from flask import Flask, request
 from ipasnhistory.query import Query
 from flask import jsonify
-import json
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 app = Flask(__name__)
 

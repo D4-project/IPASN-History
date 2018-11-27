@@ -2,7 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import json
+try:
+    import simplejson as json
+except ImportError:
+    import json
+
 
 from pyipasnhistory import IPASNHistory
 

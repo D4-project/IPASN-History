@@ -1,6 +1,7 @@
 aiohttp
 beautifulsoup4
 python-dateutil
+simplejson
 
 git+https://github.com/andymccurdy/redis-py.git
 hiredis
