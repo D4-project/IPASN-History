@@ -4,12 +4,36 @@
 from flask import Flask, request
 from ipasnhistory.query import Query
 from flask import jsonify
+
 try:
     import simplejson as json
 except ImportError:
     import json
 
 app = Flask(__name__)
+
+app.config["DEBUG"] = False
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+
+if app.config["DEBUG"]:
+    import flask_profiler
+
+    # You need to declare necessary configuration to initialize
+    # flask-profiler as follows:
+    app.config["flask_profiler"] = {
+        "enabled": app.config["DEBUG"],
+        "storage": {
+            "engine": "sqlite"
+        },
+        "basicAuth": {
+            "enabled": True,
+            "username": "admin",
+            "password": "admin"
+        },
+        "ignore": [
+            "^/static/.*"
+        ]
+    }
 
 q = Query()
 
@@ -85,3 +109,10 @@ def meta():
         return jsonify(response)
     except Exception as e:
         return jsonify({'error': str(e)})
+
+
+if app.config["DEBUG"]:
+    # In order to active flask-profiler, you have to pass flask
+    # app as an argument to flask-profiler.
+    # All the endpoints declared so far will be tracked by flask-profiler.
+    flask_profiler.init_app(app)

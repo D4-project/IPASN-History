@@ -17,13 +17,20 @@ class Query():
         self.__init_logger(loglevel)
         self.cache = StrictRedis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
         self.storagedb = StrictRedis(unix_socket_path=get_socket_path('storage'), decode_responses=True)
+        self.temp_cached_dates = {}
 
     def __init_logger(self, loglevel) -> None:
         self.logger = logging.getLogger(f'{self.__class__.__name__}')
         self.logger.setLevel(loglevel)
 
     def nearest_date(self, cached_dates: set, source: str, address_family: str, date: str, precision_delta: dict={}):
-        dates = [parse(d) for d in cached_dates]
+        dates = []
+        for d in cached_dates:
+            if isinstance(d, datetime):
+                dates.append(d)
+            else:
+                dates.append(parse(d))
+
         date = parse(date)
         if date.tzinfo:
             # Make sure the datetime isn't TZ aware, and UTC.
@@ -45,7 +52,7 @@ class Query():
         near_last = self.nearest_date(cached_dates, source, address_family, last)
         if near_first <= last and near_last >= first:
             # We have something in the given interval
-            return [d for d in cached_dates if d >= first and d <= last]
+            return [d.isoformat() for d in cached_dates if first <= d.isoformat() <= last]
         raise Exception(f'No data available in the given interval: {first} -> {last}. Nearest data to first: {near_first}, nearest data to last: {near_last} ')
 
     def perdelta(self, start, end):
@@ -79,7 +86,14 @@ class Query():
                 'cached_dates': cached_dates_by_sources}
 
     def _find_dates(self, **query_params):
-        cached_dates = self.cache.smembers(f'{query_params["source"]}|{query_params["address_family"]}|cached_dates')
+        cached_key = f'{query_params["source"]}|{query_params["address_family"]}|cached_dates'
+        if cached_key in self.temp_cached_dates and self.temp_cached_dates[cached_key]['cache_time'] >= (datetime.now() - timedelta(minutes=10)):
+            cached_dates = self.temp_cached_dates[cached_key]['dates']
+        else:
+            cached_dates = self.cache.smembers(f'{query_params["source"]}|{query_params["address_family"]}|cached_dates')
+            cached_dates = [parse(d) for d in cached_dates]
+            self.temp_cached_dates[cached_key] = {'cache_time': datetime.now(), 'dates': cached_dates}
+
         if not cached_dates:
             raise Exception(f'No route views have been loaded for {query_params["source"]} / {query_params["address_family"]} yet.')
 
@@ -99,18 +113,18 @@ class Query():
     def mass_cache(self, list_to_cache: list):
         to_return = {}
         to_return['not_cached'] = []
+        p = self.cache.pipeline()
         for to_cache in list_to_cache:
             try:
                 dates = self._find_dates(**to_cache)
                 if len(dates) > 1:
                     keys = [f'{to_cache["source"]}|{to_cache["address_family"]}|{d}|{to_cache["ip"]}' for d in dates]
-                    p = self.cache.pipeline()
                     [p.sadd('query', k) for k in keys]
-                    p.execute()
                 else:
-                    self.cache.sadd('query', f'{to_cache["source"]}|{to_cache["address_family"]}|{dates[0]}|{to_cache["ip"]}')
+                    p.sadd('query', f'{to_cache["source"]}|{to_cache["address_family"]}|{dates[0]}|{to_cache["ip"]}')
             except Exception as e:
                 to_return['not_cached'].append((to_cache, str(e)))
+        p.execute()
         return to_return
 
     def mass_query(self, list_to_query: list):
