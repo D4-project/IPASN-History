@@ -148,9 +148,9 @@ class Query():
                     else:
                         p.sadd('query', k)
             except Exception as e:
-                self.logger.exception(f'Unable to run {to_query}. - {e}')
+                self.logger.warning(f'Unable to run {to_query}. - {e}')
                 # If something fails, it *has* to be in the list
-                response['error'].append((to_query, str(e)))
+                response.append({'error', (to_query, str(e))})
             finally:
                 to_return['responses'].append(response)
         p.execute()
