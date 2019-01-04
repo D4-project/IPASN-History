@@ -45,7 +45,7 @@ def index():
         return 'Ack'
     # The values in request.args and request.form are lists, convert it to unique values
     if request.method == 'POST':
-        d = {k: v for k, v in request.form.items()}
+        d = request.get_json(force=True)
     elif request.method == 'GET':
         d = {k: v for k, v in request.args.items()}
 

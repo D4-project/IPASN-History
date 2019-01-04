@@ -12,7 +12,7 @@ from pyipasnhistory import IPASNHistory
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run a query against IP ASN History')
-    parser.add_argument('--url', required=True, type=str, help='URL of the instance.')
+    parser.add_argument('--url', type=str, help='URL of the instance.')
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--meta', action='store_true', help='Get meta information.')
@@ -26,7 +26,10 @@ if __name__ == '__main__':
     parser.add_argument('--last', help='Last date in the interval')
     args = parser.parse_args()
 
-    ipasn = IPASNHistory(args.url)
+    if args.url:
+        ipasn = IPASNHistory(args.url)
+    else:
+        ipasn = IPASNHistory()
     if args.meta:
         response = ipasn.meta()
         print(response)

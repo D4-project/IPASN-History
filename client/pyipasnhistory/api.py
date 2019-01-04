@@ -6,12 +6,15 @@ try:
 except ImportError:
     import json
 import requests
+from urllib.parse import urljoin
 
 
 class IPASNHistory():
 
-    def __init__(self, root_url: str):
-        self.root_url = root_url.rstrip('/')
+    def __init__(self, root_url: str='https://bgpranking-ng.circl.lu/ipasn_history/'):
+        self.root_url = root_url
+        if not self.root_url.endswith('/'):
+            self.root_url += '/'
         self.session = requests.session()
 
     @property
@@ -21,7 +24,7 @@ class IPASNHistory():
 
     def meta(self):
         '''Get meta information from the remote instance'''
-        r = requests.get(f'{self.root_url}/meta')
+        r = requests.get(urljoin(self.root_url, 'meta'))
         return r.json()
 
     def mass_cache(self, list_to_cache: list):
@@ -31,7 +34,7 @@ class IPASNHistory():
                 entry['precision_delta'] = json.dumps(entry.pop('precision_delta'))
             to_query.append(entry)
 
-        r = self.session.post(f'{self.root_url}/mass_cache', data=json.dumps(to_query))
+        r = self.session.post(urljoin(self.root_url, 'mass_cache'), data=json.dumps(to_query))
         return r.json()
 
     def mass_query(self, list_to_query: list):
@@ -40,7 +43,7 @@ class IPASNHistory():
             if 'precision_delta' in entry:
                 entry['precision_delta'] = json.dumps(entry.pop('precision_delta'))
             to_query.append(entry)
-        r = self.session.post(f'{self.root_url}/mass_query', data=json.dumps(to_query))
+        r = self.session.post(urljoin(self.root_url, 'mass_query'), data=json.dumps(to_query))
         return r.json()
 
     def asn_meta(self, asn: int=None, source: str='caida', address_family: str='v4',
@@ -57,7 +60,7 @@ class IPASNHistory():
         if precision_delta:
             to_query['precision_delta'] = json.dumps(precision_delta)
 
-        r = self.session.post(f'{self.root_url}/asn_meta', data=json.dumps(to_query))
+        r = self.session.post(urljoin(self.root_url, 'asn_meta'), data=json.dumps(to_query))
         return r.json()
 
     def query(self, ip: str, source: str='caida', address_family: str='v4',
@@ -81,6 +84,5 @@ class IPASNHistory():
                 to_query['last'] = last
         if precision_delta:
             to_query['precision_delta'] = json.dumps(precision_delta)
-
-        r = self.session.post(self.root_url, data=to_query)
+        r = self.session.post(self.root_url, data=json.dumps(to_query))
         return r.json()
