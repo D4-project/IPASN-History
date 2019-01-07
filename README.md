@@ -55,7 +55,7 @@ The REST API has two entry points:
 **Note**: the percentage will help 3rd party component to decide if they should query the service now or wait.
 		  It is expected to miss a few days and probably not important.
 
-* **`/` (POST/GET)**: Runs a query.
+* **`/` (POST/GET)**: Runs a query. (if you want to resolve more than 1000 IPs, use `mass_cache` and `mass_query`)
 
     **Parameters**:
 
