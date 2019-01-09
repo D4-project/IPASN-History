@@ -108,6 +108,16 @@ The REST API has two entry points:
 	}
 	```
 
+
+    **Curl examples**:
+
+    It works fine for single requests, if you have batches of IPs to lookup, use the python API and `mass_cache` `mass_query`.
+
+    ```bash
+    curl ttps://bgpranking-ng.circl.lu/ipasn_history/?ip=8.8.8.8
+    curl "https://bgpranking-ng.circl.lu/ipasn_history/?ip=2001:db8:a0b:12f0::1&address_family=v6"
+    ```
+
     **Note**: The date returned may differ from the one queried: the system will figure out the closest available date to the one queried.
 
 * **`/mass_cache` (POST)**: Caches a lot of queries at once, don't wait for the lookup.
