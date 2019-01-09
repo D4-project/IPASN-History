@@ -114,7 +114,7 @@ The REST API has two entry points:
     It works fine for single requests, if you have batches of IPs to lookup, use the python API and `mass_cache` `mass_query`.
 
     ```bash
-    curl ttps://bgpranking-ng.circl.lu/ipasn_history/?ip=8.8.8.8
+    curl https://bgpranking-ng.circl.lu/ipasn_history/?ip=8.8.8.8
     curl "https://bgpranking-ng.circl.lu/ipasn_history/?ip=2001:db8:a0b:12f0::1&address_family=v6"
     ```
 
