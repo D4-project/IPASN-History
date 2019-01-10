@@ -111,29 +111,38 @@ class Query():
         return dates
 
     def mass_cache(self, list_to_cache: list):
-        to_return = {}
-        to_return['not_cached'] = []
+        to_return = {'meta': {'number_queries': len(list_to_cache)}, 'not_cached': [], 'cached': []}
         p = self.cache.pipeline()
         for to_cache in list_to_cache:
             try:
+                if 'source' not in to_cache:
+                    to_cache['source'] = 'caida'
+                if 'address_family' not in to_cache:
+                    to_cache['address_family'] = 'v4'
                 dates = self._find_dates(**to_cache)
                 if len(dates) > 1:
                     keys = [f'{to_cache["source"]}|{to_cache["address_family"]}|{d}|{to_cache["ip"]}' for d in dates]
                     [p.sadd('query', k) for k in keys]
+                    to_return['cached'] += keys
                 else:
-                    p.sadd('query', f'{to_cache["source"]}|{to_cache["address_family"]}|{dates[0]}|{to_cache["ip"]}')
+                    key = f'{to_cache["source"]}|{to_cache["address_family"]}|{dates[0]}|{to_cache["ip"]}'
+                    p.sadd('query', key)
+                    to_return['cached'].append(key)
             except Exception as e:
                 to_return['not_cached'].append((to_cache, str(e)))
         p.execute()
         return to_return
 
     def mass_query(self, list_to_query: list):
-        to_return = {}
-        to_return['responses'] = []
+        to_return = {'meta': {'number_queries': len(list_to_query)}, 'responses': []}
         p = self.cache.pipeline()
         for to_query in list_to_query:
-            response = []
+            to_append = {'meta': to_query, 'response': {}}
             try:
+                if 'source' not in to_query:
+                    to_query['source'] = 'caida'
+                if 'address_family' not in to_query:
+                    to_query['address_family'] = 'v4'
                 dates = self._find_dates(**to_query)
                 if len(dates) > 1:
                     keys = [f'{to_query["source"]}|{to_query["address_family"]}|{d}|{to_query["ip"]}' for d in dates]
@@ -142,7 +151,7 @@ class Query():
                 for k in keys:
                     _, _, date, _ = k.split('|')
                     data = self.cache.hgetall(k)
-                    response.append({date: data})
+                    to_append['response'][date] = data
                     if data:
                         p.expire(k, 43200)  # 12h
                     else:
@@ -150,9 +159,10 @@ class Query():
             except Exception as e:
                 self.logger.warning(f'Unable to run {to_query}. - {e}')
                 # If something fails, it *has* to be in the list
-                response.append({'error', (to_query, str(e))})
+                to_append['response']['error'] = str(e)
             finally:
-                to_return['responses'].append(response)
+                to_append['response'] = OrderedDict(sorted(to_append['response'].items(), key=lambda t: t[0]))
+                to_return['responses'].append(to_append)
         p.execute()
         return to_return
 

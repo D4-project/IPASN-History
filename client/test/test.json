@@ -1,2 +1,3 @@
-{"ip": "8.9.8.8", "source": "caida", "address_family": "v4"}
+{"ip": "8.9.8.8"}
+{"ip": "2A00:1450:400C:C09::215", "address_family": "v6"}
 {"ip": "8.10.9.8", "source": "caida", "address_family": "v4", "first": "2019-01-01"}
