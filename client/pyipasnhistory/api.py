@@ -8,6 +8,8 @@ except ImportError:
 import requests
 from urllib.parse import urljoin
 
+import ipaddress
+
 
 class IPASNHistory():
 
@@ -63,18 +65,22 @@ class IPASNHistory():
         r = self.session.post(urljoin(self.root_url, 'asn_meta'), data=json.dumps(to_query))
         return r.json()
 
-    def query(self, ip: str, source: str='caida', address_family: str='v4',
+    def query(self, ip: str, source: str='caida', address_family: str=None,
               date: str=None, first: str=None, last: str=None, precision_delta: dict={}):
         '''Launch a query.
         :param ip: IP to lookup
         :param source: Source to query (currently, only caida is supported)
-        :param address_family: v4 or v6
+        :param address_family: v4 or v6. If None: use ipaddress to figure it out.
         :param date: Exact date to lookup. Fallback to most recent available.
         :param first: First date in the interval
         :param last: Last date in the interval
         :param precision_delta: Max delta allowed between the date queried and the one we have in the database. Expects a dictionary to pass to timedelta.
                                 Example: {days=1, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0}
         '''
+        if not address_family:
+            ip_parsed = ipaddress.ip_address(ip)
+            address_family = f'v{ip_parsed.version}'
+
         to_query = {'ip': ip, 'source': source, 'address_family': address_family}
         if date:
             to_query['date'] = date

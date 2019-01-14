@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     group.add_argument('--ip', help='IP to lookup')
     parser.add_argument('--source', default='caida', help='Source to query (currently, only caida is supported)')
-    parser.add_argument('--address_family', default='v4', help='Can be either v4 or v6')
+    parser.add_argument('--address_family', help='Can be either v4 or v6')
     parser.add_argument('--date', help='Exact date to lookup. Fallback to most recent available.')
     parser.add_argument('--first', help='First date in the interval')
     parser.add_argument('--last', help='Last date in the interval')
