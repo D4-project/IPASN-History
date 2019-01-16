@@ -74,6 +74,17 @@ class LookupManager(AbstractManager):
         self.cache.hmset('META:expected_interval', {'first': (init_date - timedelta(days=self.days_in_memory)).isoformat(),
                                                     'last': init_date.isoformat()})
 
+    def _cleanup_cached_dates(self):
+        """Remove from '{source}|v4|cached_dates' and {source}|v6|cached_dates the dates that aren't cached anymore"""
+        oldest_date = (date.today() - timedelta(days=self.days_in_memory)).isoformat()
+        for source in self.sources:
+            for address_family in ['v4', 'v6']:
+                key = f'{source}|{address_family}|cached_dates'
+                cached_dates = self.cache.smembers(key)
+                to_remove = [date for date in cached_dates if date < oldest_date]
+                if to_remove:
+                    self.cache.srem(key, *to_remove)
+
     def _to_run_forever(self):
         # Check the processes are running, respawn if needed
         # Kill the processes with old data to clear memory
@@ -98,6 +109,7 @@ class LookupManager(AbstractManager):
 
         self.cache.hmset('META:expected_interval', {'first': (date.today() - timedelta(days=self.days_in_memory)).isoformat(),
                                                     'last': date.today().isoformat()})
+        self._cleanup_cached_dates()
         unset_running(self.__class__.__name__)
 
 

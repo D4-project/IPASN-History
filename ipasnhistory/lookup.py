@@ -50,7 +50,10 @@ class Lookup(AbstractManager):
                 self.cache.sadd(f'lock|{self.source}|{address_family}', f'{self.first_date}_{self.last_date}')
             for d in to_load:
                 if self.trees[address_family][self.source].get(d) is None:
-                    self.trees[address_family][self.source][d] = pytricia.PyTricia()
+                    if address_family == 'v4':
+                        self.trees[address_family][self.source][d] = pytricia.PyTricia()
+                    else:
+                        self.trees[address_family][self.source][d] = pytricia.PyTricia(128)
                 if not self.trees[address_family][self.source][d]:
                     self.load_tree(d, address_family)
                     self.loaded_dates[address_family].append(d)
