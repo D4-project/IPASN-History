@@ -178,7 +178,7 @@ Examples available [in the test directory](https://github.com/D4-project/IPASN-H
 ```bash
 git clone https://github.com/antirez/redis.git
 cd redis
-git checkout 4.0
+git checkout 5.0
 make
 make test
 cd ..
@@ -205,4 +205,10 @@ pipenv shell
 start.py
 # Start the web interface
 start_website.py
+```
+
+## Shutdown IP ASN History
+
+```bash
+stop.py
 ```
