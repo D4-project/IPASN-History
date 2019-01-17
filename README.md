@@ -161,13 +161,15 @@ The REST API has two entry points:
         }
       }
     }
+    ```
 
 
 Examples available [in the test directory](https://github.com/D4-project/IPASN-History/blob/master/test/test_query.py).
 
+
 # Installation
 
-**IMPORTANT**: run it in a virtualenv, seriously. This install guide assumes you know what it is, and use one.
+**IMPORTANT**: Use [pipenv](https://pipenv.readthedocs.io/en/latest/)
 
 **NOTE**: Yes, it requires python3.6+. No, it will never support anything older.
 
@@ -196,17 +198,11 @@ cd ..
 ```bash
 git clone https://github.com/D4-project/IPASN-History.git
 cd IPASN-History
-pip install -r requirements.txt
-pip install -e .
-export IPASNHISTORY_HOME='./'
+pipenv install
+echo IPASNHISTORY_HOME="'`pwd`'" > .env
+pipenv shell
+# Starts all the backend
 start.py
-```
-
-# Install & run the web service
-
-```bash
-cd website/
-pip install -r requirements.txt
-export FLASK_APP=${IPASNHISTORY_HOME}/website/web/__init__.py
-flask run
+# Start the web interface
+start_website.py
 ```

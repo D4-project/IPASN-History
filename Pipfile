@@ -1,0 +1,22 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+flask_profiler = "*"
+
+[packages]
+aiohttp = "*"
+beautifulsoup4 = "*"
+python-dateutil = "*"
+simplejson = "*"
+ipasnhistory = {editable = true,path = "."}
+redis = '>=3'
+pytricia = {git = "https://github.com/jsommers/pytricia.git"}
+flask = "*"
+flask-bootstrap = "*"
+gunicorn = {extras = ["gevent"],version = "*"}
+
+[requires]
+python_version = "3.6"

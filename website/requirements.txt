@@ -1,5 +1,0 @@
-# Web thing
-flask
-flask-bootstrap
-
-gunicorn[gevent]
