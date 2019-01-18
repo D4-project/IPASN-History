@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ddf5bd4b3f4cc0e78659e9f43396b78720c71c2713518912208f00cdd69a4cb3"
+            "sha256": "00ae4662979025b08ace0e0685beeb423cc4accbab512b9ca8b77d3fe989a13b"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -266,6 +266,10 @@
             ],
             "version": "==4.5.2"
         },
+        "pyipasnhistory": {
+            "editable": true,
+            "path": "./client"
+        },
         "python-dateutil": {
             "hashes": [
                 "sha256:063df5763652e21de43de7d9e00ccf239f953a832941e37be541614732cdfc93",
@@ -275,6 +279,7 @@
             "version": "==2.7.5"
         },
         "pytricia": {
+            "editable": true,
             "git": "https://github.com/jsommers/pytricia.git",
             "ref": "4ba88f68c3125f789ca8cd1cfae156e1464bde87"
         },
@@ -313,10 +318,10 @@
         },
         "soupsieve": {
             "hashes": [
-                "sha256:009d8865916766f7f452880d08ff94ed4c5445011a3deaac67543b82bdb0b9ee",
-                "sha256:97599c45a1ddfe9ab0a0cba889b7f214b3e310b703f176a0610c0b54e207cc04"
+                "sha256:10687fc53eeb3518e01a0ac84d3d711da623d3298a3039459d3f649927c4a270",
+                "sha256:b23a0d7da0247200fe83c67c34de9d7599ad404106367313d8e65e04174d0b4b"
             ],
-            "version": "==1.7.1"
+            "version": "==1.7.2"
         },
         "typing-extensions": {
             "hashes": [
