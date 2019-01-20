@@ -13,6 +13,7 @@ setup(
     description='Python client for IP ASN History',
     packages=['pyipasnhistory'],
     scripts=['bin/ipasn.py'],
+    install_requires=['requests'],
     classifiers=[
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
         'Development Status :: 3 - Alpha',

@@ -18,6 +18,7 @@ flask = "*"
 flask-bootstrap = "*"
 gunicorn = {extras = ["gevent"],version = "*"}
 pyipasnhistory = {editable = true,path = "./client"}
+hiredis = "*"
 
 [requires]
 python_version = "3.6"
