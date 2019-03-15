@@ -65,8 +65,28 @@ class IPASNHistory():
         r = self.session.post(urljoin(self.root_url, 'asn_meta'), data=json.dumps(to_query))
         return r.json()
 
+    def _aggregate_details(self, details: dict):
+        '''Aggregare the response when the asn/prefix tuple is the same over a period of time.'''
+        to_return = []
+        current = None
+        for timestamp, asn_prefix in details.items():
+            if not current:
+                # First loop
+                current = {'first_seen': timestamp, 'last_seen': timestamp,
+                           'asn': asn_prefix['asn'], 'prefix': asn_prefix['prefix']}
+                continue
+            if current['asn'] == asn_prefix['asn'] and current['prefix'] == asn_prefix['prefix']:
+                current['last_seen'] = timestamp
+            else:
+                to_return.append(current)
+                current = {'first_seen': timestamp, 'last_seen': timestamp,
+                           'asn': asn_prefix['asn'], 'prefix': asn_prefix['prefix']}
+        to_return.append(current)
+        return to_return
+
     def query(self, ip: str, source: str='caida', address_family: str=None,
-              date: str=None, first: str=None, last: str=None, precision_delta: dict={}):
+              date: str=None, first: str=None, last: str=None, precision_delta: dict={},
+              aggregate: bool=False):
         '''Launch a query.
         :param ip: IP to lookup
         :param source: Source to query (currently, only caida is supported)
@@ -76,6 +96,7 @@ class IPASNHistory():
         :param last: Last date in the interval
         :param precision_delta: Max delta allowed between the date queried and the one we have in the database. Expects a dictionary to pass to timedelta.
                                 Example: {days=1, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0}
+        :param aggregate: (only if more than one response) Aggregare the responses if the prefix and the ASN are the same
         '''
         if not address_family:
             ip_parsed = ipaddress.ip_address(ip)
@@ -91,4 +112,7 @@ class IPASNHistory():
         if precision_delta:
             to_query['precision_delta'] = json.dumps(precision_delta)
         r = self.session.post(self.root_url, data=json.dumps(to_query))
-        return r.json()
+        response = r.json()
+        if aggregate:
+            response['response'] = self._aggregate_details(response['response'])
+        return response
