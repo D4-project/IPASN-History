@@ -1,0 +1,3 @@
+[submodule "bgpdumpy"]
+	path = bgpdumpy
+	url = https://github.com/D4-project/bgpdumpy.git
