@@ -13,7 +13,8 @@ setup(
     description='IP ASN History, the new one..',
     packages=['ipasnhistory'],
     scripts=['bin/run_backend.py', 'bin/caida_dl.py', 'bin/start.py', 'bin/stop.py', 'bin/shutdown.py',
-             'bin/caida_loader.py', 'bin/lookup.py', 'bin/lookup_manager.py', 'bin/start_website.py'],
+             'bin/caida_loader.py', 'bin/lookup.py', 'bin/lookup_manager.py', 'bin/start_website.py',
+             'bin/install_bgpdumpy.sh'],
     classifiers=[
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
         'Development Status :: 3 - Alpha',

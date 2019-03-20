@@ -212,3 +212,9 @@ start_website.py
 ```bash
 stop.py
 ```
+
+# (Optional) Build & install bgpdumpy, required to process dumps from RIPE
+
+```bash
+install_bgpdumpy.sh
+```
