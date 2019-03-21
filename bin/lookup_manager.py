@@ -117,7 +117,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Manage the cached prefix announcements.')
     parser.add_argument('--days_in_memory', default=10, type=int, help='Total amount of days to keep in memory.')
     parser.add_argument('--floating_window_days', default=5, type=int, help='Amount of days per process.')
-    parser.add_argument('--sources', metavar='source', type=str, nargs='+', default=['caida'], help='Sources to load.')
+    parser.add_argument('--sources', metavar='source', type=str, nargs='+', default=['caida', 'ripe_rrc00'], help='Sources to load.')
     args = parser.parse_args()
 
     lookup = LookupManager(args.days_in_memory, args.floating_window_days, args.sources)
