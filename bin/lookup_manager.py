@@ -36,7 +36,7 @@ class LookupManager(AbstractManager):
     def __init__(self,
                  days_in_memory: int=10,
                  floating_window_days: int=5,
-                 sources: List[str]=['caida'],
+                 sources: List[str]=['caida', 'ripe_rrc00'],
                  loglevel: int=logging.WARNING):
         super().__init__(loglevel)
         self.floating_window_days = floating_window_days

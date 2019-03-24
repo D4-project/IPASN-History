@@ -10,8 +10,10 @@ if __name__ == '__main__':
     get_homedir()
     p = Popen(['run_backend.py', '--start'])
     p.wait()
-    Popen(['lookup_manager.py', '--days_in_memory', '180', '--floating_window_days', '30'])
+    Popen(['lookup_manager.py', '--days_in_memory', '120', '--floating_window_days', '30'])
     # Just wait a few seconds to make sure the lookup manager puts the days in memory key in redis.
     time.sleep(5)
     Popen(['caida_dl.py'])
+    Popen(['ripe_dl.py'])
     Popen(['caida_loader.py'])
+    Popen(['ripe_loader.py'])

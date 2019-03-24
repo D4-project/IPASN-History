@@ -24,7 +24,7 @@ class RipeManager(AbstractManager):
             self.storage_directory = get_homedir() / 'rawdata'
         self.downloader = RipeDownloader(self.storage_directory, collector, hours, loglevel)
         # Download last 6 month data.
-        last_months = date.today() - relativedelta(months=6)
+        last_months = date.today() - relativedelta(months=4)
         first_date = last_months
 
         loop = asyncio.get_event_loop()
