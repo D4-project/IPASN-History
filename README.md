@@ -1,10 +1,14 @@
-# IP ASN-History
+# IP ASN History
 
-This project allows you to figure out the ASN announcing an IP and the closest prefix
-announcing it at a specific date.
+IP ASN History is an open source project to figure out the ASN announcing an IP
+and the closest prefix announcing it at a specific date.
 
-The default curently loads announces from [CAIDA](http://data.caida.org/datasets/routing/)
-but RIPE will be added soon in order to be able to compare the announces.
+The default currently loads announces from [CAIDA](http://data.caida.org/datasets/routing/)
+also [RIPE dumps](https://www.ripe.net/analyse/internet-measurements/routing-information-service-ris/ris-raw-data) in MRT format.
+
+IP ASN History is a complete open source project to run your own server locally.
+
+If you don't want to run your own server, there is a [public API](https://www.d4-project.org/open%20source/asn/history/2019/01/09/IP-ASN-History.html) operated by CIRCL.
 
 # API
 
