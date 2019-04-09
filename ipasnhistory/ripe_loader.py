@@ -29,7 +29,8 @@ class RipeLoader():
         self.logger.setLevel(loglevel)
 
     def already_loaded(self, date: str) -> bool:
-        return self.storagedb.sismember(f'{self.key_prefix}|dates', date)
+        return (self.storagedb.sismember(f'{self.key_prefix}|v4|dates', date)
+                and self.storagedb.sismember(f'{self.key_prefix}|v6|dates', date))
 
     def update_last(self, address_family: str, date: str) -> None:
         cur_last = self.storagedb.get(f'{self.key_prefix}|{address_family}|last')
