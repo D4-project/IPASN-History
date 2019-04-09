@@ -71,6 +71,7 @@ class RipeLoader():
                 self.logger.debug('All keys ready')
                 p.execute()
                 self.update_last(address_family, date)
+            self.logger.info(f'Done with {path}')
 
             self.logger.debug('Done.')
         unset_running(self.__class__.__name__)
