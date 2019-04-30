@@ -98,6 +98,14 @@ class IPASNHistory():
                                 Example: {days=1, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0}
         :param aggregate: (only if more than one response) Aggregare the responses if the prefix and the ASN are the same
         '''
+
+        if '/' in ip:
+            # The user passed a prefix... getting the 1st IP in it.
+            network = ipaddress.ip_network(ip)
+            first_ip = network[0]
+            address_family = f'v{first_ip.version}'
+            ip = str(first_ip)
+
         if not address_family:
             ip_parsed = ipaddress.ip_address(ip)
             address_family = f'v{ip_parsed.version}'
