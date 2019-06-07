@@ -34,7 +34,7 @@ if __name__ == '__main__':
         ipasn = IPASNHistory()
     if args.meta:
         response = ipasn.meta()
-        print(response)
+        print(json.dumps(response))
     elif args.file:
         with open(args.file) as f:
             queries = [json.loads(q) for q in f]

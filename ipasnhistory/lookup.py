@@ -108,10 +108,11 @@ class Lookup(AbstractManager):
                         else:
                             ip_prefix = '::/0'
                     p.hmset(q, {'asn': asn, 'prefix': ip_prefix})
-                    p.expire(q, 43200)  # 12h
-                except ValueError as e:
+                except ValueError:
+                    p.hmset(q, {'error': f'Query invalid: "{address_family}" "{prefix}" "{date}" "{ip}"'})
                     self.logger.warning(f'Query invalid: "{address_family}" "{prefix}" "{date}" "{ip}"')
                 finally:
+                    p.expire(q, 43200)  # 12h
                     p.srem('query', q)
             p.execute()
         unset_running(self.__class__.__name__)
