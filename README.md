@@ -10,6 +10,32 @@ IP ASN History is a complete open source project to run your own server locally.
 
 If you don't want to run your own server, there is a [public API](https://www.d4-project.org/open%20source/asn/history/2019/01/09/IP-ASN-History.html) operated by CIRCL.
 
+# Python client
+
+```bash
+$ pip3 install git+https://github.com/D4-project/IPASN-History.git/#egg=pyipasnhistory\&subdirectory=client
+$ ipasn.py -h 
+usage: ipasn.py [-h] [--url URL] (--meta | --file FILE | --ip IP)
+                [--source SOURCE] [--address_family ADDRESS_FAMILY]
+                [--date DATE] [--first FIRST] [--last LAST]
+
+Run a query against IP ASN History
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --url URL             URL of the instance.
+  --meta                Get meta information.
+  --file FILE           Mass process queries from a file.
+  --ip IP               IP to lookup
+  --source SOURCE       Source to query (currently, only caida is supported)
+  --address_family ADDRESS_FAMILY
+                        Can be either v4 or v6
+  --date DATE           Exact date to lookup. Fallback to most recent
+                        available.
+  --first FIRST         First date in the interval
+  --last LAST           Last date in the interval
+```
+
 # API
 
 The REST API has two entry points:
