@@ -21,7 +21,7 @@ if __name__ == '__main__':
     group.add_argument('--file', help='Mass process queries from a file.')
 
     group.add_argument('--ip', help='IP to lookup')
-    parser.add_argument('--source', default='caida', help='Source to query (currently, only caida is supported)')
+    parser.add_argument('--source', default='caida', help='Source to query (currently, only "caida" and "ripe_rrc00" are supported)')
     parser.add_argument('--address_family', help='Can be either v4 or v6')
     parser.add_argument('--date', help='Exact date to lookup. Fallback to most recent available.')
     parser.add_argument('--first', help='First date in the interval')
