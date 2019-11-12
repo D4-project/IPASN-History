@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import argparse
 from pathlib import Path
 import logging
 from dateutil.relativedelta import relativedelta
@@ -18,13 +19,13 @@ logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s:%(message)s',
 
 class CaidaManager(AbstractManager):
 
-    def __init__(self, storage_directory: Path=None, loglevel: int=logging.INFO):
+    def __init__(self, months_to_download: int=4, storage_directory: Path=None, loglevel: int=logging.INFO):
         super().__init__(loglevel)
         if not storage_directory:
             self.storage_directory = get_homedir() / 'rawdata'
         self.downloader = CaidaDownloader(self.storage_directory, loglevel)
         # Download last 6 month data.
-        last_months = date.today() - relativedelta(months=4)
+        last_months = date.today() - relativedelta(months=months_to_download)
 
         first_date = last_months
         v4 = asyncio.ensure_future(self.downloader.find_routes('v4', first_date=first_date))
@@ -42,7 +43,11 @@ class CaidaManager(AbstractManager):
 
 
 if __name__ == '__main__':
-    m = CaidaManager()
+    parser = argparse.ArgumentParser(description='Download raw routes from RIPE.')
+    parser.add_argument('--months_to_download', default=4, type=int, help='Number of months to download.')
+    args = parser.parse_args()
+
+    m = CaidaManager(args.months_to_download)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(m.run_async(sleep_in_sec=3600))
     loop.close()

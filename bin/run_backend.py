@@ -14,6 +14,8 @@ def launch_cache(storage_directory: Path=None):
         storage_directory = get_homedir()
     if not check_running('cache'):
         Popen(["./run_redis.sh"], cwd=(storage_directory / 'cache'))
+    else:
+        raise Exception('Already running.')
 
 
 def shutdown_cache(storage_directory: Path=None):
@@ -27,6 +29,8 @@ def launch_storage(storage_directory: Path=None):
         storage_directory = get_homedir()
     if not check_running('storage'):
         Popen(["./run_ardb.sh"], cwd=(storage_directory / 'storage'))
+    else:
+        raise Exception('Already running.')
 
 
 def shutdown_storage(storage_directory: Path=None):

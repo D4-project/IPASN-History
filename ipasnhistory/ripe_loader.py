@@ -4,13 +4,61 @@
 import logging
 from pathlib import Path
 from redis import StrictRedis
-from .libs.helpers import set_running, unset_running, get_socket_path, shutdown_requested
+from .libs.helpers import set_running, unset_running, get_socket_path, shutdown_requested, get_homedir
 import re
 from collections import defaultdict
 from ipaddress import ip_network
 from datetime import datetime
 
-from bgpdumpy import routeview
+from bgpdumpy import TableDumpV2, BGPDump
+from socket import AF_INET
+
+
+def routeview(bview_file: Path, libbgpdump_path: Path=None):
+
+    def find_best_non_AS_set(originatingASs):
+        pass
+
+    if not libbgpdump_path:
+        libbgpdump_path = get_homedir() / 'bgpdump' / 'libbgpdump.so'
+        if not libbgpdump_path.exists():
+            raise Exception(f'The path to the library is invalid: {libbgpdump_path}')
+
+    routes = {'v4': [], 'v6': []}
+
+    with BGPDump(bview_file, libbgpdump_path) as bgp:
+
+        for entry in bgp:
+
+            # entry.body can be either be TableDumpV1 or TableDumpV2
+
+            if not isinstance(entry.body, TableDumpV2):
+                continue  # I expect an MRT v2 table dump file
+
+            # get a string representation of this prefix
+            prefix = f'{entry.body.prefix}/{entry.body.prefixLength}'
+
+            # get a list of each unique originating ASN for this prefix
+            all_paths = []
+            for route in entry.body.routeEntries:
+                as_path = [asn for asn in re.split(r'\s+', route.attr.asPath)]
+                all_paths.append(as_path)
+
+            # Cleanup the AS Sets
+            for asn in reversed(all_paths[-1]):
+                if asn.isnumeric():
+                    best_as = asn
+                    break
+                elif asn[1:-1].isnumeric():
+                    best_as = asn[1:-1]
+                    break
+
+            if entry.body.afi == AF_INET:
+                routes['v4'].append((prefix, best_as))
+            else:
+                routes['v6'].append((prefix, best_as))
+
+        return routes
 
 
 class RipeLoader():
