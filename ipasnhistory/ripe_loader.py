@@ -39,10 +39,7 @@ def routeview(bview_file: Path, libbgpdump_path: Path=None):
             prefix = f'{entry.body.prefix}/{entry.body.prefixLength}'
 
             # get a list of each unique originating ASN for this prefix
-            all_paths = []
-            for route in entry.body.routeEntries:
-                as_path = [asn for asn in re.split(r'\s+', route.attr.asPath)]
-                all_paths.append(as_path)
+            all_paths = [[asn for asn in route.attr.asPath.split()] for route in entry.body.routeEntries]
 
             # Cleanup the AS Sets
             for asn in reversed(all_paths[-1]):
