@@ -59,10 +59,10 @@
         },
         "bgpdumpy": {
             "hashes": [
-                "sha256:2f2b765d127c2ab5b687a5d66a942d17da12f07af0e9a8c4822e54603fa43fc7"
+                "sha256:1e936b41b679275ace2ebce650443d71261762310b1db03af18825f81b9da7a5"
             ],
             "index": "pypi",
-            "version": "==1.1.2"
+            "version": "==1.1.4"
         },
         "certifi": {
             "hashes": [
