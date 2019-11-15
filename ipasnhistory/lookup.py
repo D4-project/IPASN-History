@@ -90,7 +90,7 @@ class Lookup(AbstractManager):
                     self.cache.srem('query', q)
                     continue
                 self.logger.debug(f'Searching {q}')
-                prefix, address_family, date, ip = q.split('|')
+                prefix, address_family, date, ip = q.split('|', 3)
                 if prefix != self.source:
                     # query for an other data source, ignore
                     continue
