@@ -1,42 +1,59 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from ipasnhistory.libs.helpers import get_homedir, check_running
-from subprocess import Popen
+import argparse
+import os
 import time
 from pathlib import Path
+from subprocess import Popen
+from typing import List, Optional, Union
 
-import argparse
+from redis import Redis
+from redis.exceptions import ConnectionError
+
+from ipasnhistory.default import get_homedir, get_socket_path, get_config
 
 
-def launch_cache(storage_directory: Path=None):
+# Storage is on kvrocks, which doesn't have a socket feature, we need to get the ip/port from the config
+
+def check_running(name: str) -> bool:
+    try:
+        socket_path = get_socket_path(name)
+        if not os.path.exists(socket_path):
+            return False
+        r = Redis(unix_socket_path=socket_path)
+    except KeyError:
+        # storage
+        r = Redis(get_config('generic', 'storage_db_hostname'), get_config('generic', 'storage_db_port'))
+
+    try:
+        return True if r.ping() else False
+    except ConnectionError:
+        return False
+
+
+def launch_cache(storage_directory: Optional[Path]=None):
     if not storage_directory:
         storage_directory = get_homedir()
     if not check_running('cache'):
         Popen(["./run_redis.sh"], cwd=(storage_directory / 'cache'))
-    else:
-        raise Exception('Already running.')
 
 
-def shutdown_cache(storage_directory: Path=None):
-    if not storage_directory:
-        storage_directory = get_homedir()
-    Popen(["./shutdown_redis.sh"], cwd=(storage_directory / 'cache'))
+def shutdown_cache(storage_directory: Optional[Path]=None):
+    redis = Redis(unix_socket_path=get_socket_path('cache'))
+    redis.shutdown()
 
 
-def launch_storage(storage_directory: Path=None):
+def launch_storage(storage_directory: Optional[Path]=None):
     if not storage_directory:
         storage_directory = get_homedir()
     if not check_running('storage'):
-        Popen(["./run_ardb.sh"], cwd=(storage_directory / 'storage'))
-    else:
-        raise Exception('Already running.')
+        Popen(["./run_kvrocks.sh"], cwd=(storage_directory / 'storage'))
 
 
-def shutdown_storage(storage_directory: Path=None):
-    if not storage_directory:
-        storage_directory = get_homedir()
-    Popen(["./shutdown_ardb.sh"], cwd=(storage_directory / 'storage'))
+def shutdown_storage(storage_directory: Optional[Path]=None):
+    redis = Redis(get_config('generic', 'storage_db_hostname'), get_config('generic', 'storage_db_port'))
+    redis.shutdown()
 
 
 def launch_all():
@@ -44,12 +61,12 @@ def launch_all():
     launch_storage()
 
 
-def check_all(stop=False):
-    backends = [['cache', False], ['storage', False]]
+def check_all(stop: bool=False):
+    backends: List[List[Union[str, bool]]] = [['cache', False], ['storage', False]]
     while True:
         for b in backends:
             try:
-                b[1] = check_running(b[0])
+                b[1] = check_running(b[0])  # type: ignore
             except Exception:
                 b[1] = False
         if stop:
@@ -71,7 +88,7 @@ def stop_all():
     shutdown_storage()
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Manage backend DBs.')
     parser.add_argument("--start", action='store_true', default=False, help="Start all")
     parser.add_argument("--stop", action='store_true', default=False, help="Stop all")
@@ -84,3 +101,7 @@ if __name__ == '__main__':
         stop_all()
     if not args.stop and args.status:
         check_all()
+
+
+if __name__ == '__main__':
+    main()

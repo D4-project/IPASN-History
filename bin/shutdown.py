@@ -1,16 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from ipasnhistory.libs.helpers import is_running, get_socket_path
 import time
-from redis import StrictRedis
 
-if __name__ == '__main__':
-    r = StrictRedis(unix_socket_path=get_socket_path('cache'), db=1, decode_responses=True)
-    r.set('shutdown', 1)
+from ipasnhistory.default import AbstractManager
+
+
+def main():
+    AbstractManager.force_shutdown()
+    time.sleep(5)
     while True:
-        running = is_running()
-        print(running)
+        try:
+            running = AbstractManager.is_running()
+        except FileNotFoundError:
+            print('Redis is already down.')
+            break
         if not running:
             break
-        time.sleep(10)
+        print(running)
+        time.sleep(5)
+
+
+if __name__ == '__main__':
+    main()

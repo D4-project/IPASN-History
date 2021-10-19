@@ -1,32 +1,33 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import argparse
 import logging
-from redis import StrictRedis
-from .libs.helpers import set_running, unset_running, get_socket_path, shutdown_requested
-import pytricia
-from .abstractmanager import AbstractManager
+
+from typing import Dict, List
+
+from redis import Redis
+import pytricia  # type: ignore
+
+from ipasnhistory.default import AbstractManager, get_socket_path, get_config
 
 
 class Lookup(AbstractManager):
 
     def __init__(self, source: str, first: str, last: str, loglevel: int=logging.DEBUG):
-        self.__init_logger(loglevel)
-        self.storagedb = StrictRedis(unix_socket_path=get_socket_path('storage'), decode_responses=True)
-        self.cache = StrictRedis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
+        super().__init__(loglevel)
+
+        self.storagedb = Redis(get_config('generic', 'storage_db_hostname'), get_config('generic', 'storage_db_port'), decode_responses=True)
+        self.cache = Redis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
 
         self.source = source
         self.first_date = first
         self.last_date = last
 
-        self.trees = {'v4': {source: {}}, 'v6': {source: {}}}
-        self.loaded_dates = {'v4': [], 'v6': []}
+        self.trees: Dict[str, Dict[str, Dict]] = {'v4': {source: {}}, 'v6': {source: {}}}
+        self.loaded_dates: Dict[str, List] = {'v4': [], 'v6': []}
 
         # For the initial load, we don't care about the locks and want to load everything as fast as possible.
         self.load_all(ignore_lock=True)
-
-    def __init_logger(self, loglevel) -> None:
-        self.logger = logging.getLogger(f'{self.__class__.__name__}')
-        self.logger.setLevel(loglevel)
 
     def locked(self, address_family: str):
         # Avoid to see scripts providing data for the same time frame to be locked at the same time
@@ -75,12 +76,9 @@ class Lookup(AbstractManager):
         self.logger.debug(f'Done with Loading {self.source} {address_family}')
 
     def _to_run_forever(self):
-        set_running(self.__class__.__name__)
         while True:
-            if shutdown_requested():
-                break
             self.load_all()
-            queries = self.cache.srandmember('query', 20)
+            queries: List[str] = self.cache.srandmember('query', 20)  # type: ignore
             if not queries:
                 break
             p = self.cache.pipeline()
@@ -115,4 +113,17 @@ class Lookup(AbstractManager):
                     p.expire(q, 43200)  # 12h
                     p.srem('query', q)
             p.execute()
-        unset_running(self.__class__.__name__)
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Cache prefix announcements on a specific timeframe.')
+    parser.add_argument('source', help='Dataset source name (must be caida for now).')
+    parser.add_argument('first_date', help='First date in the interval.')
+    parser.add_argument('last_date', help='Last date in the interval.')
+    args = parser.parse_args()
+    lookup = Lookup(args.source, args.first_date, args.last_date)
+    lookup.run(sleep_in_sec=1)
+
+
+if __name__ == '__main__':
+    main()

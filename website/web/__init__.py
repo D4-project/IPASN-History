@@ -1,118 +1,131 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import json
+import pkg_resources
+from typing import Dict, List
+
 from flask import Flask, request
+from flask_restx import Api, Resource, fields  # type: ignore
+
 from ipasnhistory.query import Query
-from flask import jsonify
 
-try:
-    import simplejson as json
-except ImportError:
-    import json
+from .helpers import get_secret_key
+from .proxied import ReverseProxied
 
-app = Flask(__name__)
+app: Flask = Flask(__name__)
 
-app.config["DEBUG"] = False
-app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+app.wsgi_app = ReverseProxied(app.wsgi_app)  # type: ignore
 
-if app.config["DEBUG"]:
-    import flask_profiler
+app.config['SECRET_KEY'] = get_secret_key()
 
-    # You need to declare necessary configuration to initialize
-    # flask-profiler as follows:
-    app.config["flask_profiler"] = {
-        "enabled": app.config["DEBUG"],
-        "storage": {
-            "engine": "sqlite"
-        },
-        "basicAuth": {
-            "enabled": True,
-            "username": "admin",
-            "password": "admin"
-        },
-        "ignore": [
-            "^/static/.*"
-        ]
-    }
+api = Api(app, title='IP ASN History API',
+          description='API to query IPASN History.',
+          version=pkg_resources.get_distribution('ipasnhistory').version)
 
-q = Query()
+query: Query = Query()
 
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if request.method == 'HEAD':
-        # Just returns ack if the webserver is running
-        return 'Ack'
-    # The values in request.args and request.form are lists, convert it to unique values
-    if request.method == 'POST':
-        d = request.get_json(force=True)
-    elif request.method == 'GET':
-        d = {k: v for k, v in request.args.items()}
-
-    if 'precision_delta' in d:
-        d['precision_delta'] = json.loads(d['precision_delta'])
-    # Expected keys in d: ip, source, address_family, date, first, last, cache_only, precision_delta
-
-    try:
-        response = q.query(**dict(d))
-        return jsonify(response)
-    except Exception as e:
-        return jsonify({'error': str(e)})
+def _unpack_query(query: Dict) -> Dict:
+    if 'precision_delta' in query:
+        query['precision_delta'] = json.loads(query['precision_delta'])
+    return query
 
 
-@app.route('/mass_query', methods=['POST'])
-def mass_query():
-    '''Query all the things'''
-    try:
-        to_query = request.get_json(force=True)
-        for c in to_query:
-            if 'precision_delta' in c:
-                c['precision_delta'] = json.loads(c.pop('precision_delta'))
-        response = q.mass_query(to_query)
-        return jsonify(response)
-    except Exception as e:
-        return jsonify({'error': str(e)})
+ipquery_fields = api.model('IPQueryFields', {
+    'ip': fields.String(description="The IP to lookup", default="8.8.8.8", required=True),
+    'source': fields.String(description="The source of the data to use (currently, only caida)", default='caida'),
+    'address_family': fields.String(description="IPv4 or IPv6", default='v4'),
+    'date': fields.DateTime(description="Date of the record"),
+    'first': fields.String(description="For an interval, first date", default=''),
+    'last': fields.String(description="For an interval, last date", default=''),
+    'precision_delta': fields.String(description="For a specific, the maximal allowed interval", default='{"days": 3}'),
+})
+
+asnquery_fields = api.model('ASNQueryFields', {
+    'asn': fields.String(description="The ASN to lookup", default="6661", required=True),
+    'source': fields.String(description="The source of the data to use (currently, only caida)", default='caida'),
+    'address_family': fields.String(description="IPv4 or IPv6", default='v4'),
+    'date': fields.DateTime(description="Date of the record"),
+    'first': fields.String(description="For an interval, first date", default=''),
+    'last': fields.String(description="For an interval, last date", default=''),
+    'precision_delta': fields.String(description="For a specific, the maximal allowed interval", default='{"days": 3}'),
+})
 
 
-@app.route('/mass_cache', methods=['POST'])
-def mass_cache():
-    '''Cache a all the queries'''
-    try:
-        to_cache = request.get_json(force=True)
-        for c in to_cache:
-            if 'precision_delta' in c:
-                c['precision_delta'] = json.loads(c.pop('precision_delta'))
-        response = q.mass_cache(to_cache)
-        return jsonify(response)
-    except Exception as e:
-        return jsonify({'error': str(e)})
+@api.route('/ip')
+@api.doc(description="Search an IP")
+class IPQuery(Resource):
+
+    @api.param('ip', 'The IP to lookup', required=True)
+    def get(self):
+        # The values in request.args and request.form are lists, convert it to unique values
+        d = _unpack_query({k: v for k, v in request.args.items()})
+        try:
+            return query.query(**d)
+        except Exception as e:
+            return {'error': e}
+
+    @api.doc(body=ipquery_fields)
+    def post(self):
+        d = _unpack_query(request.get_json(force=True))  # type: ignore
+        try:
+            return query.query(**d)
+        except Exception as e:
+            return {'error': e}
 
 
-@app.route('/asn_meta', methods=['POST'])
-def asn_meta():
-    '''Get the ASN meta information'''
-    try:
-        query = request.get_json(force=True)
-        if 'precision_delta' in query:
-            query['precision_delta'] = json.loads(query.pop('precision_delta'))
-        response = q.asn_meta(**query)
-        return jsonify(response)
-    except Exception as e:
-        return jsonify({'error': str(e)})
+mass_ipquery_fields = api.model('MassIPQueryFields', ipquery_fields, as_list=True)
 
 
-@app.route('/meta', methods=['GET'])
-def meta():
-    '''Returns meta information regarding the data contained in the system'''
-    try:
-        response = q.meta()
-        return jsonify(response)
-    except Exception as e:
-        return jsonify({'error': str(e)})
+@api.route('/mass_query')
+@api.doc(description="Search a list of IP")
+class MassQuery(Resource):
+
+    @api.doc(body=mass_ipquery_fields)
+    def post(self):
+        try:
+            to_query: List = request.get_json(force=True)  # type: ignore
+            for c in to_query:
+                c = _unpack_query(c)
+            return query.mass_query(to_query)
+        except Exception as e:
+            return {'error': str(e)}
 
 
-if app.config["DEBUG"]:
-    # In order to active flask-profiler, you have to pass flask
-    # app as an argument to flask-profiler.
-    # All the endpoints declared so far will be tracked by flask-profiler.
-    flask_profiler.init_app(app)
+@api.route('/mass_cache')
+@api.doc(description="Cache a list of IP")
+class MassCache(Resource):
+    @api.doc(body=mass_ipquery_fields)
+    def post(self):
+        try:
+            to_query: List = request.get_json(force=True)  # type: ignore
+            for c in to_query:
+                c = _unpack_query(c)
+            return query.mass_cache(to_query)
+        except Exception as e:
+            return {'error': str(e)}
+
+
+@api.route('/asn_meta', methods=['POST'])
+@api.doc(description='Get the ASN meta information')
+class ASNMeta(Resource):
+
+    @api.doc(body=asnquery_fields)
+    def post(self):
+        try:
+            to_query = _unpack_query(request.get_json(force=True))  # type: ignore
+            return query.asn_meta(**to_query)
+        except Exception as e:
+            return {'error': str(e)}
+
+
+@api.route('/meta')
+@api.route(description='Returns meta information regarding the data contained in the system')
+class Meta(Resource):
+
+    def get(self):
+        try:
+            return query.meta()
+        except Exception as e:
+            return {'error': str(e)}

@@ -1,0 +1,57 @@
+[tool.poetry]
+name = "ipasnhistory"
+version = "2.0"
+description = "IP ASN History helps to figure out which prefix and ASN is announcing a specific IP."
+authors = ["Raphaël Vinot <raphael.vinot@circl.lu>"]
+license = "AGPL"
+
+[tool.poetry.scripts]
+start = "bin.start:main"
+stop = "bin.stop:main"
+update = "bin.update:main"
+shutdown = "bin.shutdown:main"
+run_backend = "bin.run_backend:main"
+start_website = "bin.start_website:main"
+
+caida_downloader = "bin.caida_dl:main"
+caida_loader = "bin.caida_loader:main"
+lookup_manager = "bin.lookup_manager:main"
+lookup = "bin.lookup:main"
+
+
+[tool.poetry.dependencies]
+python = "^3.8"
+redis = "^3.5.3"
+hiredis = "^2.0.0"
+flask-restx = "^0.5.1"
+gunicorn = "^20.1.0"
+pytricia = {git = "https://github.com/jsommers/pytricia.git"}
+aiohttp = {extras = ["speedups"], version = "^3.7.4"}
+beautifulsoup4 = "^4.10.0"
+python-dateutil = "^2.8.2"
+
+[tool.poetry.dev-dependencies]
+ipython = "^7.27.0"
+mypy = "^0.910"
+types-setuptools = "^57.0.2"
+types-redis = "^3.5.8"
+types-requests = "^2.25.11"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+python_version = 3.8
+check_untyped_defs = true
+ignore_errors = false
+ignore_missing_imports = false
+strict_optional = true
+no_implicit_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unreachable = true
+
+show_error_context = true
+pretty = true

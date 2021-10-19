@@ -7,13 +7,12 @@ from datetime import timedelta, date
 from subprocess import Popen
 from typing import List
 
-from redis import StrictRedis
+from redis import Redis
 
-from ipasnhistory.abstractmanager import AbstractManager
-from ipasnhistory.libs.helpers import set_running, unset_running, get_socket_path
+from ipasnhistory.default import AbstractManager, get_socket_path
 
 logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s:%(message)s',
-                    level=logging.DEBUG, datefmt='%I:%M:%S')
+                    level=logging.INFO)
 
 
 '''
@@ -39,11 +38,12 @@ class LookupManager(AbstractManager):
                  sources: List[str]=['caida', 'ripe_rrc00'],
                  loglevel: int=logging.WARNING):
         super().__init__(loglevel)
+        self.script_name = "lookup_manager"
         self.floating_window_days = floating_window_days
         self.days_in_memory = days_in_memory
         self.sources = sources
 
-        self.cache = StrictRedis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
+        self.cache = Redis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
         # Cleanup pytricia cache information as it has to be reloaded
         for source in self.sources:
             self.cache.delete(f'{source}|v4|cached_dates')
@@ -54,19 +54,19 @@ class LookupManager(AbstractManager):
         # Start process today -> today + self.floating_window_days
         last = init_date + timedelta(days=self.floating_window_days)
         for source in self.sources:
-            p = Popen(['lookup.py', source, init_date.isoformat(), last.isoformat()])
+            p = Popen(['lookup', source, init_date.isoformat(), last.isoformat()])
             self.running_processes.append((p, init_date, last))
             # Start process today - self.floating_window_days/2 -> today + self.floating_window_days/2
             first = init_date - timedelta(days=self.floating_window_days / 2)
             last = init_date + timedelta(days=self.floating_window_days / 2)
-            p = Popen(['lookup.py', source, first.isoformat(), last.isoformat()])
+            p = Popen(['lookup', source, first.isoformat(), last.isoformat()])
             self.running_processes.append((p, first, last))
 
             current = init_date - timedelta(days=1)
             # Start all processes with complete datasets
             while current > (init_date - timedelta(days=self.days_in_memory)):
                 begin_interval = current - timedelta(self.floating_window_days)
-                p = Popen(['lookup.py', source, begin_interval.isoformat(), current.isoformat()])
+                p = Popen(['lookup', source, begin_interval.isoformat(), current.isoformat()])
                 self.running_processes.append((p, begin_interval, current))
                 current = current - timedelta(self.floating_window_days / 2)
 
@@ -88,7 +88,6 @@ class LookupManager(AbstractManager):
     def _to_run_forever(self):
         # Check the processes are running, respawn if needed
         # Kill the processes with old data to clear memory
-        set_running(self.__class__.__name__)
         for source in self.sources:
             first_loop = True
             for p, first, last in sorted(self.running_processes, key=lambda tup: tup[2], reverse=True):
@@ -97,7 +96,7 @@ class LookupManager(AbstractManager):
                     if last < (date.today() + timedelta(self.floating_window_days / 2)):
                         new_first = date.today()
                         new_last = date.today() + timedelta(days=self.floating_window_days)
-                        new_p = Popen(['lookup.py', source, new_first.isoformat(), new_last.isoformat()])
+                        new_p = Popen(['lookup', source, new_first.isoformat(), new_last.isoformat()])
                         self.running_processes.append((new_p, new_first, new_last))
                 if last < (date.today() - timedelta(days=self.days_in_memory)):
                     p.kill()
@@ -110,10 +109,9 @@ class LookupManager(AbstractManager):
         self.cache.hmset('META:expected_interval', {'first': (date.today() - timedelta(days=self.days_in_memory)).isoformat(),
                                                     'last': date.today().isoformat()})
         self._cleanup_cached_dates()
-        unset_running(self.__class__.__name__)
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Manage the cached prefix announcements.')
     parser.add_argument('--days_in_memory', default=10, type=int, help='Total amount of days to keep in memory.')
     parser.add_argument('--floating_window_days', default=5, type=int, help='Amount of days per process.')
@@ -122,3 +120,7 @@ if __name__ == '__main__':
 
     lookup = LookupManager(args.days_in_memory, args.floating_window_days, args.sources)
     lookup.run(sleep_in_sec=1)
+
+
+if __name__ == '__main__':
+    main()
