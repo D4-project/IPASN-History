@@ -19,19 +19,19 @@ logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s:%(message)s',
                     level=logging.INFO)
 
 
-class CaidaLoader():
+class CaidaLoader(AbstractManager):
 
-    def __init__(self, loglevel: int=logging.DEBUG) -> None:
-        self.__init_logger(loglevel)
+    def __init__(self, loglevel: int=logging.INFO):
+        super().__init__(loglevel)
+        self.script_name = "caida_loader"
         self.key_prefix = 'caida'
         self.storage_root = get_data_dir() / 'caida'
         self.storagedb = Redis(get_config('generic', 'storage_db_hostname'), get_config('generic', 'storage_db_port'), decode_responses=True)
         self.storagedb.sadd('prefixes', self.key_prefix)
         self.cache = Redis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
 
-    def __init_logger(self, loglevel) -> None:
-        self.logger = logging.getLogger(f'{self.__class__.__name__}')
-        self.logger.setLevel(loglevel)
+    def _to_run_forever(self):
+        self.load_all()
 
     def already_loaded(self, address_family: str, date: str) -> bool:
         return self.storagedb.sismember(f'{self.key_prefix}|{address_family}|dates', date)
@@ -78,19 +78,8 @@ class CaidaLoader():
             self.logger.debug('Done.')
 
 
-class CaidaManager(AbstractManager):
-
-    def __init__(self, loglevel: int=logging.WARNING):
-        super().__init__(loglevel)
-        self.script_name = "caida_loader"
-        self.loader = CaidaLoader(loglevel)
-
-    def _to_run_forever(self):
-        self.loader.load_all()
-
-
 def main():
-    m = CaidaManager()
+    m = CaidaLoader()
     m.run(sleep_in_sec=30)
 
 

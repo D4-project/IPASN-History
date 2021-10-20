@@ -16,15 +16,12 @@ from .default import get_socket_path, get_config
 
 class Query():
 
-    def __init__(self, loglevel: int=logging.DEBUG):
-        self.__init_logger(loglevel)
+    def __init__(self):
+        self.logger = logging.getLogger(f'{self.__class__.__name__}')
+        self.logger.setLevel(get_config('generic', 'loglevel'))
         self.cache = Redis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
         self.storagedb = Redis(get_config('generic', 'storage_db_hostname'), get_config('generic', 'storage_db_port'), decode_responses=True)
         self.temp_cached_dates: Dict[str, Dict[str, Any]] = {}
-
-    def __init_logger(self, loglevel) -> None:
-        self.logger = logging.getLogger(f'{self.__class__.__name__}')
-        self.logger.setLevel(loglevel)
 
     def nearest_date(self, cached_dates: set, source: str, address_family: str, date: str, precision_delta: Optional[Dict[str, int]]=None):
         dates = []
