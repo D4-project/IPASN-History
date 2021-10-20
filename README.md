@@ -12,30 +12,7 @@ If you don't want to run your own server, there is a [public API](https://www.d4
 
 # Python client
 
-```bash
-$ pip3 install git+https://github.com/D4-project/IPASN-History.git/#egg=pyipasnhistory\&subdirectory=client
-$ ipasn.py -h
-usage: ipasn.py [-h] [--url URL] (--meta | --file FILE | --ip IP)
-                [--source SOURCE] [--address_family ADDRESS_FAMILY]
-                [--date DATE] [--first FIRST] [--last LAST]
-
-Run a query against IP ASN History
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --url URL             URL of the instance.
-  --meta                Get meta information.
-  --file FILE           Mass process queries from a file.
-  --ip IP               IP to lookup
-  --source SOURCE       Source to query (currently, only "caida" and
-                        "ripe_rrc00" are supported)
-  --address_family ADDRESS_FAMILY
-                        Can be either v4 or v6
-  --date DATE           Exact date to lookup. Fallback to most recent
-                        available.
-  --first FIRST         First date in the interval
-  --last LAST           Last date in the interval
-```
+See the [PyIPASNHistory repository](https://github.com/D4-project/pyipasnhistory)
 
 # API
 
@@ -193,9 +170,6 @@ The REST API has two entry points:
       }
     }
     ```
-
-
-Examples available [in the test directory](https://github.com/D4-project/IPASN-History/blob/master/test/test_query.py).
 
 
 # Installation
