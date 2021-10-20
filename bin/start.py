@@ -14,12 +14,12 @@ def main():
     p.check_returncode()
     print('done.')
 
-    Popen(['lookup_manager', '--days_in_memory', '10', '--floating_window_days', '3'])
-    Popen(['caida_downloader', '--months_to_download', '1'])
+    Popen(['lookup_manager'])
+    Popen(['caida_downloader'])
     Popen(['caida_loader'])
 
     print('Start website...')
-    #Popen(['start_website'])
+    Popen(['start_website'])
     print('done.')
 
 

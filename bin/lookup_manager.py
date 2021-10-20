@@ -5,11 +5,10 @@ import argparse
 import logging
 from datetime import timedelta, date
 from subprocess import Popen
-from typing import List
 
 from redis import Redis
 
-from ipasnhistory.default import AbstractManager, get_socket_path
+from ipasnhistory.default import AbstractManager, get_socket_path, get_config
 
 logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s:%(message)s',
                     level=logging.INFO)
@@ -32,16 +31,12 @@ Metadata
 
 class LookupManager(AbstractManager):
 
-    def __init__(self,
-                 days_in_memory: int=10,
-                 floating_window_days: int=5,
-                 sources: List[str]=['caida', 'ripe_rrc00'],
-                 loglevel: int=logging.WARNING):
+    def __init__(self, loglevel: int=logging.WARNING):
         super().__init__(loglevel)
         self.script_name = "lookup_manager"
-        self.floating_window_days = floating_window_days
-        self.days_in_memory = days_in_memory
-        self.sources = sources
+        self.floating_window_days = get_config('generic', 'floating_window_days')
+        self.days_in_memory = get_config('generic', 'days_in_memory')
+        self.sources = get_config('generic', 'sources')
 
         self.cache = Redis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
         # Cleanup pytricia cache information as it has to be reloaded
@@ -113,12 +108,9 @@ class LookupManager(AbstractManager):
 
 def main():
     parser = argparse.ArgumentParser(description='Manage the cached prefix announcements.')
-    parser.add_argument('--days_in_memory', default=10, type=int, help='Total amount of days to keep in memory.')
-    parser.add_argument('--floating_window_days', default=5, type=int, help='Amount of days per process.')
-    parser.add_argument('--sources', metavar='source', type=str, nargs='+', default=['caida', 'ripe_rrc00'], help='Sources to load.')
-    args = parser.parse_args()
+    parser.parse_args()
 
-    lookup = LookupManager(args.days_in_memory, args.floating_window_days, args.sources)
+    lookup = LookupManager()
     lookup.run(sleep_in_sec=1)
 
 

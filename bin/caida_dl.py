@@ -12,25 +12,39 @@ import aiohttp
 from bs4 import BeautifulSoup  # type: ignore
 from dateutil.relativedelta import relativedelta
 
-from ipasnhistory.default import AbstractManager, safe_create_dir
+from ipasnhistory.default import AbstractManager, safe_create_dir, get_config
 from ipasnhistory.helpers import get_data_dir
 
 logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s:%(message)s',
                     level=logging.INFO)
 
 
-class CaidaDownloader():
+class CaidaDownloader(AbstractManager):
 
-    def __init__(self, loglevel: int=logging.DEBUG) -> None:
-        self.__init_logger(loglevel)
+    def __init__(self, loglevel: int=logging.INFO):
+        super().__init__(loglevel)
+        self.script_name = "caida_downloader"
+        self.months_to_download = get_config('generic', 'months_to_download')
+        last_months = date.today() - relativedelta(months=self.months_to_download)
         self.ipv6_url = 'http://data.caida.org/datasets/routing/routeviews6-prefix2as/{}'
         self.ipv4_url = 'http://data.caida.org/datasets/routing/routeviews-prefix2as/{}'
         self.storage_root = get_data_dir()
         self.sema = asyncio.BoundedSemaphore(2)
 
-    def __init_logger(self, loglevel):
-        self.logger = logging.getLogger(f'{self.__class__.__name__}')
-        self.logger.setLevel(loglevel)
+        asyncio.run(self._fetch_existing_routes(last_months))
+
+    async def _fetch_existing_routes(self, cutoff_date: date):
+        v4 = asyncio.ensure_future(self.find_routes('v4', first_date=cutoff_date))
+        v6 = asyncio.ensure_future(self.find_routes('v6', first_date=cutoff_date))
+
+        await asyncio.gather(v4, v6, return_exceptions=True)
+
+    async def _to_run_forever_async(self):
+        try:
+            for address_family in ['v4', 'v6']:
+                await self.download_latest(address_family)
+        except aiohttp.client_exceptions.ClientConnectorError as e:
+            self.logger.critical(f'Error while fetching a routeview file: {e}')
 
     def _get_root_url(self, address_family: str) -> str:
         if address_family == 'v4':
@@ -100,36 +114,11 @@ class CaidaDownloader():
             await self.download_routes(session, address_family, path)
 
 
-class CaidaManager(AbstractManager):
-
-    def __init__(self, months_to_download: int=4, loglevel: int=logging.INFO):
-        super().__init__(loglevel)
-        self.script_name = "caida_downloader"
-        self.downloader = CaidaDownloader(loglevel)
-        # Download last 6 month data.
-        last_months = date.today() - relativedelta(months=months_to_download)
-
-        first_date = last_months
-        v4 = asyncio.ensure_future(self.downloader.find_routes('v4', first_date=first_date))
-        v6 = asyncio.ensure_future(self.downloader.find_routes('v6', first_date=first_date))
-
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(asyncio.gather(v4, v6, return_exceptions=True))
-
-    async def _to_run_forever_async(self):
-        try:
-            for address_family in ['v4', 'v6']:
-                await self.downloader.download_latest(address_family)
-        except aiohttp.client_exceptions.ClientConnectorError as e:
-            self.logger.critical(f'Error while fetching a routeview file: {e}')
-
-
 def main():
     parser = argparse.ArgumentParser(description='Download raw routes from RIPE.')
-    parser.add_argument('--months_to_download', default=4, type=int, help='Number of months to download.')
-    args = parser.parse_args()
+    parser.parse_args()
 
-    m = CaidaManager(args.months_to_download)
+    m = CaidaDownloader()
     asyncio.run(m.run_async(sleep_in_sec=3600))
 
 

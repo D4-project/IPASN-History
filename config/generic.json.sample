@@ -3,14 +3,22 @@
     "website_listen_ip": "0.0.0.0",
     "website_listen_port": 5176,
     "systemd_service_name": "ipasnhistory",
-    "storage_db_hostname': "127.0.0.1",
+    "storage_db_hostname": "127.0.0.1",
     "storage_db_port": 5177,
+    "months_to_download": 1,
+    "days_in_memory": 10,
+    "floating_window_days": 3,
+    "sources": ["caida"],
     "_notes": {
         "loglevel": "(lookyloo) Can be one of the value listed here: https://docs.python.org/3/library/logging.html#levels",
         "website_listen_ip": "IP Flask will listen on. Defaults to 0.0.0.0, meaning all interfaces.",
         "website_listen_port": "Port Flask will listen on.",
         "systemd_service_name": "(Optional) Name of the systemd service if your project has one.",
         "storage_db_hostname": "Hostname or IP of the kvrocks instance. Must be the same as in storage/kvrocks.conf",
-        "storage_db_port": "Port of the kvrocks instance. Must be the same as in storage/kvrocks.conf"
+        "storage_db_port": "Port of the kvrocks instance. Must be the same as in storage/kvrocks.conf",
+        "months_to_download": "Number of month of historical data to download",
+        "days_in_memory": "Number of days to keep in memory (older data will automatically purged from memory)",
+        "floating_window_days": "Size of the floating window. The smalest, the more memory it uses.",
+        "sources": "The sources to load in memory. Currently, caida only, soon RIPE too."
     }
 }
