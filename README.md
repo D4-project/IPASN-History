@@ -202,7 +202,7 @@ Examples available [in the test directory](https://github.com/D4-project/IPASN-H
 
 **IMPORTANT**: Use [pipenv](https://pipenv.readthedocs.io/en/latest/)
 
-**NOTE**: Yes, it requires python3.6+. No, it will never support anything older.
+**NOTE**: Yes, it requires python3.8+. No, it will never support anything older.
 
 ## Install redis
 
@@ -215,12 +215,13 @@ make test
 cd ..
 ```
 
-## Install ardb
+## Install kvrocks
+
 
 ```bash
-git clone https://github.com/yinqiwen/ardb.git
-cd ardb
-DISABLE_WARNING_AS_ERROR=1 make  # ardb (more precisely rocksdb) doesn't compile on ubuntu 18.04 unless you disable warning as error
+git clone https://github.com/KvrocksLabs/kvrocks.git
+cd kvrocks
+make -j4
 cd ..
 ```
 
@@ -229,19 +230,16 @@ cd ..
 ```bash
 git clone https://github.com/D4-project/IPASN-History.git
 cd IPASN-History
-pipenv install
+poetry install
 echo IPASNHISTORY_HOME="'`pwd`'" > .env
-pipenv shell
-# Starts all the backend
-start.py
-# Start the web interface
-start_website.py
+poetry shell
+start
 ```
 
 ## Shutdown IP ASN History
 
 ```bash
-stop.py
+stop
 ```
 
 # (Optional) Build & install bgpdumpy, required to process dumps from RIPE
