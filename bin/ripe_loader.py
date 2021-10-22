@@ -7,7 +7,7 @@ from collections import defaultdict
 from datetime import datetime
 from ipaddress import ip_network
 from pathlib import Path
-from typing import Optional, Dict, List, Any
+from typing import Dict, List, Any
 
 from redis import Redis
 
@@ -15,26 +15,21 @@ from bgpdumpy import TableDumpV2, BGPDump  # type: ignore
 from socket import AF_INET
 
 
-from ipasnhistory.default import AbstractManager, get_homedir, get_socket_path, get_config
+from ipasnhistory.default import AbstractManager, get_socket_path, get_config
 from ipasnhistory.helpers import get_data_dir
 
 logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s:%(message)s',
                     level=logging.INFO)
 
 
-def routeview(bview_file: Path, libbgpdump_path: Optional[Path]=None):
+def routeview(bview_file: Path):
 
     def find_best_non_AS_set(originatingASs):
         pass
 
-    if not libbgpdump_path:
-        libbgpdump_path = get_homedir() / 'bgpdump' / 'libbgpdump.so'
-        if not libbgpdump_path.exists():
-            raise Exception(f'The path to the library is invalid: {libbgpdump_path}')
-
     routes: Dict[str, List] = {'v4': [], 'v6': []}
 
-    with BGPDump(bview_file, libbgpdump_path) as bgp:
+    with BGPDump(bview_file) as bgp:
 
         for entry in bgp:
 
