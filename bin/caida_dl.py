@@ -28,7 +28,7 @@ class CaidaDownloader(AbstractManager):
         self.ipv6_url = 'http://data.caida.org/datasets/routing/routeviews6-prefix2as/{}'
         self.ipv4_url = 'http://data.caida.org/datasets/routing/routeviews-prefix2as/{}'
         self.storage_root = get_data_dir()
-        self.sema = asyncio.BoundedSemaphore(2)
+        self.sema = asyncio.BoundedSemaphore(10)
 
         oldest_month_to_download = date.today() - relativedelta(months=self.months_to_download)
         asyncio.run(self._fetch_existing_routes(oldest_month_to_download))
@@ -107,10 +107,10 @@ class CaidaDownloader(AbstractManager):
         self.logger.debug(f'Search for new routes ({address_family}).')
         has_new, path = await self._has_new(address_family)
         if not has_new:
-            self.logger.debug(f'None found ({address_family}.')
+            self.logger.debug(f'None found ({address_family}).')
             return
         async with aiohttp.ClientSession() as session:
-            self.logger.debug(f'Has new ({address_family}.')
+            self.logger.debug(f'Has new ({address_family}).')
             await self.download_routes(session, address_family, path)
 
 

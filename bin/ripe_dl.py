@@ -25,7 +25,7 @@ class RipeDownloader(AbstractManager):
         self.months_to_download = get_config('generic', 'months_to_download')
         self.url = 'http://data.ris.ripe.net/{}'
         self.storage_root = get_data_dir()
-        self.sema = asyncio.BoundedSemaphore(2)
+        self.sema = asyncio.BoundedSemaphore(10)
 
         oldest_month_to_download = date.today() - relativedelta(months=self.months_to_download)
         asyncio.run(self.find_routes(first_date=oldest_month_to_download))
