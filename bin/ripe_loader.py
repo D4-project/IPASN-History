@@ -66,20 +66,20 @@ def routeview(bview_file: Path, libbgpdump_path: Optional[Path]=None):
         return routes
 
 
-class RipeLoader():
+class RipeLoader(AbstractManager):
 
-    def __init__(self, collector: str, loglevel: int=logging.DEBUG) -> None:
-        self.__init_logger(loglevel)
-        self.collector = collector
+    def __init__(self, loglevel: int=logging.INFO):
+        super().__init__(loglevel)
+        self.script_name = "ripe_loader"
+        self.collector = 'rrc00'
         self.key_prefix = f'ripe_{self.collector}'
         self.storage_root = get_data_dir() / 'ripe' / self.collector
         self.storagedb = Redis(get_config('generic', 'storage_db_hostname'), get_config('generic', 'storage_db_port'), decode_responses=True)
         self.storagedb.sadd('prefixes', self.key_prefix)
         self.cache = Redis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
 
-    def __init_logger(self, loglevel) -> None:
-        self.logger = logging.getLogger(f'{self.__class__.__name__}')
-        self.logger.setLevel(loglevel)
+    def _to_run_forever(self):
+        self.load_all()
 
     def already_loaded(self, date: str) -> bool:
         return (self.storagedb.sismember(f'{self.key_prefix}|v4|dates', date)
@@ -126,19 +126,8 @@ class RipeLoader():
             self.logger.debug('Done.')
 
 
-class RipeManager(AbstractManager):
-
-    def __init__(self, collector: str, loglevel: int=logging.INFO):
-        super().__init__(loglevel)
-        self.script_name = "ripe_loader"
-        self.loader = RipeLoader(collector, loglevel)
-
-    def _to_run_forever(self):
-        self.loader.load_all()
-
-
 def main():
-    m = RipeManager('rrc00')
+    m = RipeLoader()
     m.run(sleep_in_sec=30)
 
 

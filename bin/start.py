@@ -15,8 +15,12 @@ def main():
     print('done.')
 
     Popen(['lookup_manager'])
+
     Popen(['caida_downloader'])
     Popen(['caida_loader'])
+
+    Popen(['ripe_downloader'])
+    Popen(['ripe_loader'])
 
     print('Start website...')
     Popen(['start_website'])

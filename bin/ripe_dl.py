@@ -8,26 +8,33 @@ import asyncio
 from datetime import date, timedelta
 import aiohttp
 
-from ipasnhistory.default import AbstractManager, safe_create_dir
+from ipasnhistory.default import AbstractManager, safe_create_dir, get_config
 from ipasnhistory.helpers import get_data_dir
 
 logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s:%(message)s',
                     level=logging.INFO)
 
 
-class RipeDownloader():
+class RipeDownloader(AbstractManager):
 
-    def __init__(self, collector: str='rrc00', hours: list=['0000'], loglevel: int=logging.DEBUG) -> None:
-        self.__init_logger(loglevel)
-        self.collector = collector
-        self.hours = hours
+    def __init__(self, loglevel: int=logging.INFO):
+        super().__init__(loglevel)
+        self.script_name = "ripe_downloader"
+        self.collector = 'rrc00'
+        self.hours = ['0000']
+        self.months_to_download = get_config('generic', 'months_to_download')
         self.url = 'http://data.ris.ripe.net/{}'
         self.storage_root = get_data_dir()
-        self.sema = asyncio.BoundedSemaphore(5)
+        self.sema = asyncio.BoundedSemaphore(2)
 
-    def __init_logger(self, loglevel: int):
-        self.logger = logging.getLogger(f'{self.__class__.__name__}')
-        self.logger.setLevel(loglevel)
+        oldest_month_to_download = date.today() - relativedelta(months=self.months_to_download)
+        asyncio.run(self.find_routes(first_date=oldest_month_to_download))
+
+    async def _to_run_forever_async(self):
+        try:
+            await self.download_latest()
+        except aiohttp.client_exceptions.ClientConnectorError as e:
+            self.logger.critical(f'Error while fetching a routeview file: {e}')
 
     async def download_routes(self, session: aiohttp.ClientSession, path: str) -> bool:
         store_path = self.storage_root / 'ripe' / path
@@ -76,32 +83,11 @@ class RipeDownloader():
                 self.logger.debug('No new routes.')
 
 
-class RipeManager(AbstractManager):
-
-    def __init__(self, collector: str, hours: list, months_to_download: int=4, loglevel: int=logging.DEBUG):
-        super().__init__(loglevel)
-        self.script_name = "ripe_downloader"
-        self.downloader = RipeDownloader(collector, hours, loglevel)
-        # Download last 6 month data.
-        last_months = date.today() - relativedelta(months=months_to_download)
-        first_date = last_months
-
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.downloader.find_routes(first_date=first_date))
-
-    async def _to_run_forever_async(self):
-        try:
-            await self.downloader.download_latest()
-        except aiohttp.client_exceptions.ClientConnectorError as e:
-            self.logger.critical(f'Error while fetching a routeview file: {e}')
-
-
 def main():
     parser = argparse.ArgumentParser(description='Download raw routes from RIPE.')
-    parser.add_argument('--months_to_download', default=4, type=int, help='Number of months to download.')
-    args = parser.parse_args()
+    parser.parse_args()
 
-    m = RipeManager('rrc00', ['0000'], args.months_to_download)
+    m = RipeDownloader()
     asyncio.run(m.run_async(sleep_in_sec=3600))
 
 

@@ -25,13 +25,13 @@ class CaidaDownloader(AbstractManager):
         super().__init__(loglevel)
         self.script_name = "caida_downloader"
         self.months_to_download = get_config('generic', 'months_to_download')
-        last_months = date.today() - relativedelta(months=self.months_to_download)
         self.ipv6_url = 'http://data.caida.org/datasets/routing/routeviews6-prefix2as/{}'
         self.ipv4_url = 'http://data.caida.org/datasets/routing/routeviews-prefix2as/{}'
         self.storage_root = get_data_dir()
         self.sema = asyncio.BoundedSemaphore(2)
 
-        asyncio.run(self._fetch_existing_routes(last_months))
+        oldest_month_to_download = date.today() - relativedelta(months=self.months_to_download)
+        asyncio.run(self._fetch_existing_routes(oldest_month_to_download))
 
     async def _fetch_existing_routes(self, cutoff_date: date):
         v4 = asyncio.ensure_future(self.find_routes('v4', first_date=cutoff_date))

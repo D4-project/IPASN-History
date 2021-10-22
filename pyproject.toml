@@ -15,6 +15,8 @@ start_website = "bin.start_website:main"
 
 caida_downloader = "bin.caida_dl:main"
 caida_loader = "bin.caida_loader:main"
+ripe_downloader = "bin.ripe_dl:main"
+ripe_loader = "bin.ripe_loader:main"
 lookup_manager = "bin.lookup_manager:main"
 lookup = "bin.lookup:main"
 
@@ -29,6 +31,7 @@ pytricia = {git = "https://github.com/jsommers/pytricia.git"}
 aiohttp = {extras = ["speedups"], version = "^3.7.4"}
 beautifulsoup4 = "^4.10.0"
 python-dateutil = "^2.8.2"
+bgpdumpy = {version = "^1.1.4", optional = true}
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.27.0"
@@ -37,6 +40,9 @@ types-setuptools = "^57.0.2"
 types-redis = "^3.5.8"
 types-requests = "^2.25.11"
 types-python-dateutil = "^2.8.2"
+
+[tool.poetry.extras]
+ripe = ["bgpdumpy"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

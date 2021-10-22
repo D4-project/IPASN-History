@@ -174,7 +174,7 @@ The REST API has two entry points:
 
 # Installation
 
-**IMPORTANT**: Use [pipenv](https://pipenv.readthedocs.io/en/latest/)
+**IMPORTANT**: Use [poetry](https://github.com/python-poetry/poetry#installation)
 
 **NOTE**: Yes, it requires python3.8+. No, it will never support anything older.
 
@@ -183,14 +183,15 @@ The REST API has two entry points:
 ```bash
 git clone https://github.com/antirez/redis.git
 cd redis
-git checkout 5.0
+git checkout 6.2
 make
 make test
 cd ..
 ```
 
-## Install kvrocks
+**Note**: If it fails, have a look at [the documentation](https://github.com/redis/redis#building-redis).
 
+## Install kvrocks
 
 ```bash
 git clone https://github.com/KvrocksLabs/kvrocks.git
@@ -198,6 +199,8 @@ cd kvrocks
 make -j4
 cd ..
 ```
+
+**Note**: If it fails, have a look at [the documentation](https://github.com/KvrocksLabs/kvrocks#building-kvrocks).
 
 ## Install & run IP ASN History
 
@@ -219,5 +222,6 @@ stop
 # (Optional) Build & install bgpdumpy, required to process dumps from RIPE
 
 ```bash
-install_bgpdumpy.sh
+sudo apt install ca-certificates gcc make autoconf libbz2-dev zlib1g-dev libffi-dev
+poetry install -E ripe
 ```

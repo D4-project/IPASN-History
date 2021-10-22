@@ -1,3 +1,8 @@
+# Local exclude
+scraped/
+*.swp
+lookyloo/ete3_webserver/webapi.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -100,16 +105,15 @@ ENV/
 # mypy
 .mypy_cache/
 
-# Redis
-*.rdb
 
-# Storage
+# web
+secret_key
+
+cache.pid
+dump.rdb
+
+# Local config files
+config/*.json
+config/*.json.bkp
+
 rawdata
-
-# ardb
-storage/ardb.pid
-storage/data
-storage/repl
-
-# Vim
-*.swp
