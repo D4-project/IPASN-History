@@ -32,27 +32,25 @@ class RipeDownloader(AbstractManager):
         except aiohttp.client_exceptions.ClientConnectorError as e:
             self.logger.critical(f'Error while fetching a routeview file: {e}')
 
-    async def download_routes(self, session: aiohttp.ClientSession, path: str) -> bool:
+    async def download_routes(self, session: aiohttp.ClientSession, path: str) -> None:
         store_path = self.storage_root / 'ripe' / path
         if store_path.exists():
             # Already downloaded
-            return False
+            return
         self.logger.info(f'New file to download: {path}')
         safe_create_dir(store_path.parent)
         async with self.sema, session.get(self.url.format(path)) as r:
             self.logger.debug('Starting {}'.format(self.url.format(path)))
             if r.status != 200:
                 self.logger.info('Unreachable: {}'.format(self.url.format(path)))
-                return False
+                return
             content = await r.read()
             if not content.startswith(b'\x1f\x8b'):
                 # Not a gzip file, skip.
                 print(content[:2])
-                return False
             with open(store_path, 'wb') as f:
                 f.write(content)
-            self.logger.info('Done {}'.format(self.url.format(path)))
-            return True
+            self.logger.info(f'File downloaded: {path}')
 
     async def find_routes(self, first_date: date, last_date: date=date.today()) -> None:
         cur_date = last_date
@@ -61,9 +59,12 @@ class RipeDownloader(AbstractManager):
             while cur_date >= first_date:
                 for hour in self.hours:
                     path = f'{self.collector}/{cur_date:%Y.%m}/bview.{cur_date:%Y%m%d}.{hour}.gz'
-                    tasks.append(self.download_routes(session, path))
+                    task = asyncio.create_task(self.download_routes(session, path), name=f'Download routes {path}')
+                    if task:
+                        tasks.append(task)
                 cur_date -= timedelta(days=1)
-            await asyncio.gather(*tasks, return_exceptions=True)
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
 
     async def download_latest(self) -> None:
         self.logger.debug('Search for new routes.')
@@ -71,10 +72,7 @@ class RipeDownloader(AbstractManager):
         async with aiohttp.ClientSession() as session:
             for hour in self.hours:
                 path = f'{self.collector}/{cur_date:%Y.%m}/bview.{cur_date:%Y%m%d}.{hour}.gz'
-                downloaded = await self.download_routes(session, path)
-                if downloaded:
-                    self.logger.debug('New routes found.')
-                    break
+                await self.download_routes(session, path)
             else:
                 self.logger.debug('No new routes.')
 
