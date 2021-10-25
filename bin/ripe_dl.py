@@ -22,13 +22,9 @@ class RipeDownloader(AbstractManager):
         self.script_name = "ripe_downloader"
         self.collector = 'rrc00'
         self.hours = ['0000']
-        self.months_to_download = get_config('generic', 'months_to_download')
         self.url = 'http://data.ris.ripe.net/{}'
         self.storage_root = get_data_dir()
         self.sema = asyncio.BoundedSemaphore(10)
-
-        oldest_month_to_download = date.today() - relativedelta(months=self.months_to_download)
-        asyncio.run(self.find_routes(first_date=oldest_month_to_download))
 
     async def _to_run_forever_async(self):
         try:
@@ -88,6 +84,9 @@ def main():
     parser.parse_args()
 
     m = RipeDownloader()
+    months_to_download = get_config('generic', 'months_to_download')
+    oldest_month_to_download = date.today() - relativedelta(months=months_to_download)
+    asyncio.run(m.find_routes(first_date=oldest_month_to_download))
     asyncio.run(m.run_async(sleep_in_sec=3600))
 
 
