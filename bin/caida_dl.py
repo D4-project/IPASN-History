@@ -31,11 +31,11 @@ class CaidaDownloader(AbstractManager):
         self.sema = asyncio.BoundedSemaphore(10)
 
         oldest_month_to_download = date.today() - relativedelta(months=self.months_to_download)
-        asyncio.run(self._fetch_existing_routes(oldest_month_to_download))
+        asyncio.run(self._fetch_existing_routes(oldest_month_to_download), debug=True)
 
     async def _fetch_existing_routes(self, cutoff_date: date):
-        v4 = asyncio.ensure_future(self.find_routes('v4', first_date=cutoff_date))
-        v6 = asyncio.ensure_future(self.find_routes('v6', first_date=cutoff_date))
+        v4 = asyncio.create_task(self.find_routes('v4', first_date=cutoff_date), name='Fetch old ipv4 routes')
+        v6 = asyncio.create_task(self.find_routes('v6', first_date=cutoff_date), name='Fetch old ipv6 routes')
 
         await asyncio.gather(v4, v6, return_exceptions=True)
 
