@@ -24,9 +24,6 @@ logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s:%(message)s',
 
 def routeview(bview_file: Path):
 
-    def find_best_non_AS_set(originatingASs):
-        pass
-
     routes: Dict[str, List] = {'v4': [], 'v6': []}
 
     with BGPDump(bview_file) as bgp:
@@ -100,7 +97,7 @@ class RipeLoader(AbstractManager):
                 continue
             self.logger.info(f'Loading {path}')
             routes = routeview(path)
-            self.logger.debug('Content loaded')
+            self.logger.info('Content loaded')
             for address_family, entries in routes.items():
                 to_import: Dict[str, Any] = defaultdict(lambda: {address_family: set(), 'ipcount': 0})
                 for prefix, asn in entries:
@@ -108,17 +105,16 @@ class RipeLoader(AbstractManager):
                     to_import[asn][address_family].add(str(network))
                     to_import[asn]['ipcount'] += network.num_addresses
                 p = self.storagedb.pipeline()
-                p.sadd(f'{self.key_prefix}|{address_family}|dates', date)
-                p.sadd(f'{self.key_prefix}|{address_family}|{date}|asns', *to_import.keys())  # Store all ASNs
+                self.storagedb.sadd(f'{self.key_prefix}|{address_family}|dates', date)
+                self.storagedb.sadd(f'{self.key_prefix}|{address_family}|{date}|asns', *to_import.keys())  # Store all ASNs
                 for asn, data in to_import.items():
+                    p = self.storagedb.pipeline()
                     p.sadd(f'{self.key_prefix}|{address_family}|{date}|{asn}', *data[address_family])  # Store all prefixes
                     p.set(f'{self.key_prefix}|{address_family}|{date}|{asn}|ipcount', data['ipcount'])  # Total IPs for the AS
+                    p.execute()
                 self.logger.debug('All keys ready')
-                p.execute()
                 self.update_last(address_family, date)
             self.logger.info(f'Done with {path}')
-
-            self.logger.debug('Done.')
 
 
 def main():
