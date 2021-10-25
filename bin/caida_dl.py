@@ -118,7 +118,7 @@ def main():
     m = CaidaDownloader()
     months_to_download = get_config('generic', 'months_to_download')
     oldest_month_to_download = date.today() - relativedelta(months=months_to_download)
-    asyncio.run(m.fetch_existing_routes(oldest_month_to_download), debug=True)
+    asyncio.run(m.fetch_existing_routes(oldest_month_to_download))
     asyncio.run(m.run_async(sleep_in_sec=3600))
 
 
