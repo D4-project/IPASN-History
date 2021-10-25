@@ -24,7 +24,7 @@ class RipeDownloader(AbstractManager):
         self.hours = ['0000']
         self.url = 'http://data.ris.ripe.net/{}'
         self.storage_root = get_data_dir()
-        self.sema = asyncio.BoundedSemaphore(10)
+        self.sema = asyncio.BoundedSemaphore(2)
 
     async def _to_run_forever_async(self):
         try:
@@ -42,7 +42,7 @@ class RipeDownloader(AbstractManager):
         async with self.sema, session.get(self.url.format(path)) as r:
             self.logger.debug('Starting {}'.format(self.url.format(path)))
             if r.status != 200:
-                self.logger.debug('Unreachable: {}'.format(self.url.format(path)))
+                self.logger.info('Unreachable: {}'.format(self.url.format(path)))
                 return False
             content = await r.read()
             if not content.startswith(b'\x1f\x8b'):
@@ -51,7 +51,7 @@ class RipeDownloader(AbstractManager):
                 return False
             with open(store_path, 'wb') as f:
                 f.write(content)
-            self.logger.debug('Done {}'.format(self.url.format(path)))
+            self.logger.info('Done {}'.format(self.url.format(path)))
             return True
 
     async def find_routes(self, first_date: date, last_date: date=date.today()) -> None:
