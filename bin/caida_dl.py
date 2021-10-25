@@ -24,16 +24,12 @@ class CaidaDownloader(AbstractManager):
     def __init__(self, loglevel: int=logging.INFO):
         super().__init__(loglevel)
         self.script_name = "caida_downloader"
-        self.months_to_download = get_config('generic', 'months_to_download')
         self.ipv6_url = 'http://data.caida.org/datasets/routing/routeviews6-prefix2as/{}'
         self.ipv4_url = 'http://data.caida.org/datasets/routing/routeviews-prefix2as/{}'
         self.storage_root = get_data_dir()
-        self.sema = asyncio.BoundedSemaphore(10)
+        self.sema = asyncio.BoundedSemaphore(5)
 
-        oldest_month_to_download = date.today() - relativedelta(months=self.months_to_download)
-        asyncio.run(self._fetch_existing_routes(oldest_month_to_download), debug=True)
-
-    async def _fetch_existing_routes(self, cutoff_date: date):
+    async def fetch_existing_routes(self, cutoff_date: date):
         v4 = asyncio.create_task(self.find_routes('v4', first_date=cutoff_date), name='Fetch old ipv4 routes')
         v6 = asyncio.create_task(self.find_routes('v6', first_date=cutoff_date), name='Fetch old ipv6 routes')
 
@@ -81,6 +77,7 @@ class CaidaDownloader(AbstractManager):
                 return
             with open(store_path, 'wb') as f:
                 f.write(content)
+            self.logger.info(f'File downloaded: {path}')
 
     async def find_routes(self, address_family: str, first_date: date, last_date: date=date.today()) -> None:
         root_url = self._get_root_url(address_family)
@@ -97,7 +94,7 @@ class CaidaDownloader(AbstractManager):
                         if href.startswith('routeviews'):
                             dl_path = f'{cur_date:%Y/%m}/{href}'
                             self.logger.debug(dl_path)
-                            task = asyncio.ensure_future(self.download_routes(session, address_family, dl_path))
+                            task = asyncio.create_task(self.download_routes(session, address_family, dl_path), name=f'Download route {dl_path}')
                             if task:
                                 tasks.append(task)
                 await asyncio.gather(*tasks, return_exceptions=True)
@@ -119,6 +116,9 @@ def main():
     parser.parse_args()
 
     m = CaidaDownloader()
+    months_to_download = get_config('generic', 'months_to_download')
+    oldest_month_to_download = date.today() - relativedelta(months=months_to_download)
+    asyncio.run(m.fetch_existing_routes(oldest_month_to_download), debug=True)
     asyncio.run(m.run_async(sleep_in_sec=3600))
 
 
