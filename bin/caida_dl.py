@@ -94,7 +94,7 @@ class CaidaDownloader(AbstractManager):
                             dl_path = f'{cur_date:%Y/%m}/{href}'
                             self.logger.debug(dl_path)
                             async with sem:
-                                self.download_routes(session, address_family, dl_path)
+                                await self.download_routes(session, address_family, dl_path)
             cur_date = cur_date - relativedelta(months=1)
 
     async def download_latest(self, address_family: str) -> None:
