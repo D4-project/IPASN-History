@@ -27,7 +27,6 @@ class CaidaDownloader(AbstractManager):
         self.ipv6_url = 'http://data.caida.org/datasets/routing/routeviews6-prefix2as/{}'
         self.ipv4_url = 'http://data.caida.org/datasets/routing/routeviews-prefix2as/{}'
         self.storage_root = get_data_dir()
-        self.sema = asyncio.BoundedSemaphore(5)
 
     async def fetch_existing_routes(self, cutoff_date: date):
         v4 = asyncio.create_task(self.find_routes('v4', first_date=cutoff_date), name='Fetch old ipv4 routes')
@@ -68,7 +67,7 @@ class CaidaDownloader(AbstractManager):
         self.logger.info(f'New file to download: {path}')
         safe_create_dir(store_path.parent)
         root_url = self._get_root_url(address_family)
-        async with self.sema, session.get(root_url.format(path)) as r:
+        async with session.get(root_url.format(path)) as r:
             self.logger.debug(root_url.format(path))
             content = await r.read()
             if not content.startswith(b'\x1f\x8b'):
@@ -97,7 +96,11 @@ class CaidaDownloader(AbstractManager):
                             task = asyncio.create_task(self.download_routes(session, address_family, dl_path), name=f'Download route {dl_path}')
                             if task:
                                 tasks.append(task)
-                await asyncio.gather(*tasks, return_exceptions=True)
+                    if len(tasks) >= 5:
+                        await asyncio.gather(*tasks, return_exceptions=True)
+                        tasks = []
+                if tasks:
+                    await asyncio.gather(*tasks, return_exceptions=True)
             cur_date = cur_date - relativedelta(months=1)
 
     async def download_latest(self, address_family: str) -> None:

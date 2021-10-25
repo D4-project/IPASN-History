@@ -24,7 +24,6 @@ class RipeDownloader(AbstractManager):
         self.hours = ['0000']
         self.url = 'http://data.ris.ripe.net/{}'
         self.storage_root = get_data_dir()
-        self.sema = asyncio.BoundedSemaphore(2)
 
     async def _to_run_forever_async(self):
         try:
@@ -39,7 +38,7 @@ class RipeDownloader(AbstractManager):
             return
         self.logger.info(f'New file to download: {path}')
         safe_create_dir(store_path.parent)
-        async with self.sema, session.get(self.url.format(path)) as r:
+        async with session.get(self.url.format(path)) as r:
             self.logger.debug('Starting {}'.format(self.url.format(path)))
             if r.status != 200:
                 self.logger.info('Unreachable: {}'.format(self.url.format(path)))
@@ -54,14 +53,17 @@ class RipeDownloader(AbstractManager):
 
     async def find_routes(self, first_date: date, last_date: date=date.today()) -> None:
         cur_date = last_date
-        tasks = []
         async with aiohttp.ClientSession() as session:
+            tasks = []
             while cur_date >= first_date:
                 for hour in self.hours:
                     path = f'{self.collector}/{cur_date:%Y.%m}/bview.{cur_date:%Y%m%d}.{hour}.gz'
                     task = asyncio.create_task(self.download_routes(session, path), name=f'Download routes {path}')
                     if task:
                         tasks.append(task)
+                if len(tasks) >= 2:
+                    await asyncio.gather(*tasks, return_exceptions=True)
+                    tasks = []
                 cur_date -= timedelta(days=1)
             if tasks:
                 await asyncio.gather(*tasks, return_exceptions=True)
