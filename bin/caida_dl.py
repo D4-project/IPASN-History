@@ -81,10 +81,10 @@ class CaidaDownloader(AbstractManager):
     async def find_routes(self, address_family: str, first_date: date, last_date: date=date.today()) -> None:
         root_url = self._get_root_url(address_family)
         cur_date = last_date
+        sem = asyncio.Semaphore(2)
         while cur_date >= first_date:
             list_url = f'{cur_date:%Y/%m}'  # Makes a string like that: YYYY/MM
             async with aiohttp.ClientSession() as session:
-                tasks = []
                 self.logger.debug(root_url.format(list_url))
                 async with session.get(root_url.format(list_url)) as r:
                     soup = BeautifulSoup(await r.text(), 'html.parser')
@@ -93,14 +93,8 @@ class CaidaDownloader(AbstractManager):
                         if href.startswith('routeviews'):
                             dl_path = f'{cur_date:%Y/%m}/{href}'
                             self.logger.debug(dl_path)
-                            task = asyncio.create_task(self.download_routes(session, address_family, dl_path), name=f'Download route {dl_path}')
-                            if task:
-                                tasks.append(task)
-                    if len(tasks) >= 5:
-                        await asyncio.gather(*tasks, return_exceptions=True)
-                        tasks = []
-                if tasks:
-                    await asyncio.gather(*tasks, return_exceptions=True)
+                            async with sem:
+                                self.download_routes(session, address_family, dl_path)
             cur_date = cur_date - relativedelta(months=1)
 
     async def download_latest(self, address_family: str) -> None:

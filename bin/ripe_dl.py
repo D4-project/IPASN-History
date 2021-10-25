@@ -53,20 +53,14 @@ class RipeDownloader(AbstractManager):
 
     async def find_routes(self, first_date: date, last_date: date=date.today()) -> None:
         cur_date = last_date
+        sem = asyncio.Semaphore(2)
         async with aiohttp.ClientSession() as session:
-            tasks = []
             while cur_date >= first_date:
                 for hour in self.hours:
                     path = f'{self.collector}/{cur_date:%Y.%m}/bview.{cur_date:%Y%m%d}.{hour}.gz'
-                    task = asyncio.create_task(self.download_routes(session, path), name=f'Download routes {path}')
-                    if task:
-                        tasks.append(task)
-                if len(tasks) >= 2:
-                    await asyncio.gather(*tasks, return_exceptions=True)
-                    tasks = []
+                    async with sem:
+                        await self.download_routes(session, path)
                 cur_date -= timedelta(days=1)
-            if tasks:
-                await asyncio.gather(*tasks, return_exceptions=True)
 
     async def download_latest(self) -> None:
         self.logger.debug('Search for new routes.')
