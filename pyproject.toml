@@ -32,6 +32,7 @@ aiohttp = {extras = ["speedups"], version = "^3.7.4"}
 beautifulsoup4 = "^4.10.0"
 python-dateutil = "^2.8.2"
 bgpdumpy = {version = "^1.1.4", optional = true}
+pyipasnhistory = "^2.0"
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.27.0"
