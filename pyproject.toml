@@ -23,24 +23,23 @@ lookup = "bin.lookup:main"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-redis = "^3.5.3"
-hiredis = "^2.0.0"
+redis = {version = "^4.1.0", extras = ["hiredis"]}
 flask-restx = "^0.5.1"
 gunicorn = "^20.1.0"
 pytricia = {git = "https://github.com/jsommers/pytricia.git"}
-aiohttp = {extras = ["speedups"], version = "^3.7.4"}
+aiohttp = {extras = ["speedups"], version = "^3.8.1"}
 beautifulsoup4 = "^4.10.0"
 python-dateutil = "^2.8.2"
 bgpdumpy = {version = "^1.1.4", optional = true}
 pyipasnhistory = "^2.0"
 
 [tool.poetry.dev-dependencies]
-ipython = "^7.27.0"
-mypy = "^0.910"
-types-setuptools = "^57.0.2"
-types-redis = "^3.5.8"
-types-requests = "^2.25.11"
-types-python-dateutil = "^2.8.2"
+ipython = "^7.30.1"
+mypy = "^0.930"
+types-setuptools = "^57.4.5"
+types-redis = "^4.0"
+types-requests = "^2.26.3"
+types-python-dateutil = "^2.8.4"
 
 [tool.poetry.extras]
 ripe = ["bgpdumpy"]
