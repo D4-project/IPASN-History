@@ -155,7 +155,7 @@ pycparser = "*"
 
 [[package]]
 name = "charset-normalizer"
-version = "2.0.9"
+version = "2.0.10"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
 category = "main"
 optional = false
@@ -299,7 +299,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 
 [[package]]
 name = "ipython"
-version = "7.30.1"
+version = "7.31.0"
 description = "IPython: Productive Interactive Computing"
 category = "dev"
 optional = false
@@ -528,14 +528,14 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "pyipasnhistory"
-version = "2.1"
+version = "2.1.1"
 description = "Python client for IP ASN History"
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 
 [package.dependencies]
-requests = ">=2.26.0,<3.0.0"
+requests = ">=2.27.0,<3.0.0"
 
 [package.extras]
 docs = ["Sphinx (>=4.2.0,<5.0.0)"]
@@ -773,7 +773,7 @@ ripe = ["bgpdumpy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "55efe17fce1b75218d8a8cebb2bbc1f34036cdf6e916f2927dc1c01eedac0128"
+content-hash = "7765319fe3e719326028be87368ad1f44704c8ba628672760e388115a99b93e8"
 
 [metadata.files]
 aiodns = [
@@ -1007,8 +1007,8 @@ cffi = [
     {file = "cffi-1.15.0.tar.gz", hash = "sha256:920f0d66a896c2d99f0adbb391f990a84091179542c205fa53ce5787aff87954"},
 ]
 charset-normalizer = [
-    {file = "charset-normalizer-2.0.9.tar.gz", hash = "sha256:b0b883e8e874edfdece9c28f314e3dd5badf067342e42fb162203335ae61aa2c"},
-    {file = "charset_normalizer-2.0.9-py3-none-any.whl", hash = "sha256:1eecaa09422db5be9e29d7fc65664e6c33bd06f9ced7838578ba40d58bdf3721"},
+    {file = "charset-normalizer-2.0.10.tar.gz", hash = "sha256:876d180e9d7432c5d1dfd4c5d26b72f099d503e8fcc0feb7532c9289be60fcbd"},
+    {file = "charset_normalizer-2.0.10-py3-none-any.whl", hash = "sha256:cb957888737fc0bbcd78e3df769addb41fd1ff8cf950dc9e7ad7793f1bf44455"},
 ]
 click = [
     {file = "click-8.0.3-py3-none-any.whl", hash = "sha256:353f466495adaeb40b6b5f592f9f91cb22372351c84caeb068132442a4518ef3"},
@@ -1162,8 +1162,8 @@ importlib-resources = [
     {file = "importlib_resources-5.4.0.tar.gz", hash = "sha256:d756e2f85dd4de2ba89be0b21dba2a3bbec2e871a42a3a16719258a11f87506b"},
 ]
 ipython = [
-    {file = "ipython-7.30.1-py3-none-any.whl", hash = "sha256:fc60ef843e0863dd4e24ab2bb5698f071031332801ecf8d1aeb4fb622056545c"},
-    {file = "ipython-7.30.1.tar.gz", hash = "sha256:cb6aef731bf708a7727ab6cde8df87f0281b1427d41e65d62d4b68934fa54e97"},
+    {file = "ipython-7.31.0-py3-none-any.whl", hash = "sha256:4c4234cdcc6b8f87c5b5c7af9899aa696ac5cfcf0e9f6d0688018bbee5c73bce"},
+    {file = "ipython-7.31.0.tar.gz", hash = "sha256:346c74db7312c41fa566d3be45d2e759a528dcc2994fe48aac1a03a70cd668a3"},
 ]
 itsdangerous = [
     {file = "itsdangerous-2.0.1-py3-none-any.whl", hash = "sha256:5174094b9637652bdb841a3029700391451bd092ba3db90600dea710ba28e97c"},
@@ -1387,8 +1387,8 @@ pygments = [
     {file = "Pygments-2.11.1.tar.gz", hash = "sha256:59b895e326f0fb0d733fd28c6839bd18ad0687ba20efc26d4277fd1d30b971f4"},
 ]
 pyipasnhistory = [
-    {file = "pyipasnhistory-2.1-py3-none-any.whl", hash = "sha256:38f84f52270a7da276c602b3c7bd267c75a4f92fe7f9a78664fbe732b9a3fc56"},
-    {file = "pyipasnhistory-2.1.tar.gz", hash = "sha256:df10cbdf9db2cba7a83ce23b93b12f066635b572f535ba65fb625075a68c917a"},
+    {file = "pyipasnhistory-2.1.1-py3-none-any.whl", hash = "sha256:c38058faa32c00238c0320cf1ecf269240037364b4bb6be194ffc65ac14d1bb3"},
+    {file = "pyipasnhistory-2.1.1.tar.gz", hash = "sha256:eeaebf38394c7e23401c01641a3ee6b2a2db291253a9d576a07e96787a938f86"},
 ]
 pyparsing = [
     {file = "pyparsing-3.0.6-py3-none-any.whl", hash = "sha256:04ff808a5b90911829c55c4e26f75fa5ca8a2f5f36aa3a51f68e27033341d3e4"},

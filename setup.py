@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='ipasnhistory',
-    version='0.1',
+    version='2.2-dev',
     author='Raphaël Vinot',
     author_email='raphael.vinot@circl.lu',
     maintainer='Raphaël Vinot',
