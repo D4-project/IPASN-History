@@ -106,6 +106,9 @@ class Lookup(AbstractManager):
                             ip_prefix = '0.0.0.0/0'
                         else:
                             ip_prefix = '::/0'
+                    if ip_prefix in ['0.0.0.0/0', '::/0']:
+                        # Make sure not to return an ASN if we have no prefix.
+                        asn = 0
                     p.hmset(q, {'asn': asn, 'prefix': ip_prefix})
                 except ValueError:
                     p.hmset(q, {'error': f'Query invalid: "{address_family}" "{prefix}" "{date}" "{ip}"'})

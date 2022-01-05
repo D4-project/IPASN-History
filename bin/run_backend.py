@@ -6,7 +6,7 @@ import os
 import time
 from pathlib import Path
 from subprocess import Popen
-from typing import List, Optional, Union
+from typing import Optional, Dict
 
 from redis import Redis
 from redis.exceptions import ConnectionError
@@ -14,18 +14,14 @@ from redis.exceptions import ConnectionError
 from ipasnhistory.default import get_homedir, get_socket_path, get_config
 
 
-# Storage is on kvrocks, which doesn't have a socket feature, we need to get the ip/port from the config
-
 def check_running(name: str) -> bool:
-    try:
+    if name == "storage":
+        r = Redis(get_config('generic', 'storage_db_hostname'), get_config('generic', 'storage_db_port'))
+    else:
         socket_path = get_socket_path(name)
         if not os.path.exists(socket_path):
             return False
         r = Redis(unix_socket_path=socket_path)
-    except KeyError:
-        # storage
-        r = Redis(get_config('generic', 'storage_db_hostname'), get_config('generic', 'storage_db_port'))
-
     try:
         return True if r.ping() else False
     except ConnectionError:
@@ -40,8 +36,11 @@ def launch_cache(storage_directory: Optional[Path]=None):
 
 
 def shutdown_cache(storage_directory: Optional[Path]=None):
-    redis = Redis(unix_socket_path=get_socket_path('cache'))
-    redis.shutdown()
+    if not storage_directory:
+        storage_directory = get_homedir()
+    r = Redis(unix_socket_path=get_socket_path('cache'))
+    r.shutdown(save=True)
+    print('Redis cache database shutdown.')
 
 
 def launch_storage(storage_directory: Optional[Path]=None):
@@ -62,24 +61,25 @@ def launch_all():
 
 
 def check_all(stop: bool=False):
-    backends: List[List[Union[str, bool]]] = [['cache', False], ['storage', False]]
+    backends: Dict[str, bool] = {'cache': False, 'storage': False}
     while True:
-        for b in backends:
+        for db_name in backends.keys():
+            print(backends[db_name])
             try:
-                b[1] = check_running(b[0])  # type: ignore
+                backends[db_name] = check_running(db_name)
             except Exception:
-                b[1] = False
+                backends[db_name] = False
         if stop:
-            if not any(b[1] for b in backends):
+            if not any(running for running in backends.values()):
                 break
         else:
-            if all(b[1] for b in backends):
+            if all(running for running in backends.values()):
                 break
-        for b in backends:
-            if not stop and not b[1]:
-                print(f"Waiting on {b[0]}")
-            if stop and b[1]:
-                print(f"Waiting on {b[0]}")
+        for db_name, running in backends.items():
+            if not stop and not running:
+                print(f"Waiting on {db_name} to start")
+            if stop and running:
+                print(f"Waiting on {db_name} to stop")
         time.sleep(1)
 
 
