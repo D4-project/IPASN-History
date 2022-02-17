@@ -112,8 +112,8 @@ class RipeLoader(AbstractManager):
                     p.sadd(f'{self.key_prefix}|{address_family}|{date}|{asn}', *data[address_family])  # Store all prefixes
                     p.set(f'{self.key_prefix}|{address_family}|{date}|{asn}|ipcount', data['ipcount'])  # Total IPs for the AS
                     p.execute()
-                self.logger.debug('All keys ready')
-                self.update_last(address_family, date)
+            self.logger.debug('All keys ready')
+            self.update_last(address_family, date)
             self.logger.info(f'Done with {path}')
 
 
