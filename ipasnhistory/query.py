@@ -42,7 +42,7 @@ class Query():
             min_date = parsed_date - timedelta(**precision_delta)
             max_date = parsed_date + timedelta(**precision_delta)
             if nearest < min_date or nearest > max_date:
-                raise Exception(f'Unable to find a date in the expected interval: {min_date.isoformat()} -> {max_date.isoformat()}.')
+                raise Exception(f'Unable to find a date in the expected interval: {min_date.isoformat()} -> {max_date.isoformat()} for {source}.')
         return nearest.isoformat()
 
     def find_interval(self, cached_dates: set, source: str, address_family: str, first: str, last: Optional[str]=None):
