@@ -66,7 +66,8 @@ class RipeLoader(AbstractManager):
         self.collector = 'rrc00'
         self.key_prefix = f'ripe_{self.collector}'
         self.storage_root = get_data_dir() / 'ripe' / self.collector
-        self.storagedb = Redis(get_config('generic', 'storage_db_hostname'), get_config('generic', 'storage_db_port'), decode_responses=True)
+        self.storagedb = Redis(get_config('generic', 'storage_db_hostname'),
+                               get_config('generic', 'storage_db_port'), decode_responses=True)
         self.storagedb.sadd('prefixes', self.key_prefix)
         self.cache = Redis(unix_socket_path=get_socket_path('cache'), decode_responses=True)
 

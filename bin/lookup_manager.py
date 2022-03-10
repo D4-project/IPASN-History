@@ -3,6 +3,8 @@
 
 import argparse
 import logging
+
+from collections import defaultdict
 from datetime import timedelta, date
 from subprocess import Popen
 
@@ -45,24 +47,24 @@ class LookupManager(AbstractManager):
             self.cache.delete(f'{source}|v6|cached_dates')
 
         init_date = date.today()
-        self.running_processes = []
+        self.running_processes = defaultdict(list)
         # Start process today -> today + self.floating_window_days
         last = init_date + timedelta(days=self.floating_window_days)
         for source in self.sources:
             p = Popen(['lookup', source, init_date.isoformat(), last.isoformat()])
-            self.running_processes.append((p, init_date, last))
+            self.running_processes[source].append((p, init_date, last))
             # Start process today - self.floating_window_days/2 -> today + self.floating_window_days/2
             first = init_date - timedelta(days=self.floating_window_days / 2)
             last = init_date + timedelta(days=self.floating_window_days / 2)
             p = Popen(['lookup', source, first.isoformat(), last.isoformat()])
-            self.running_processes.append((p, first, last))
+            self.running_processes[source].append((p, first, last))
 
             current = init_date - timedelta(days=1)
             # Start all processes with complete datasets
             while current > (init_date - timedelta(days=self.days_in_memory)):
                 begin_interval = current - timedelta(self.floating_window_days)
                 p = Popen(['lookup', source, begin_interval.isoformat(), current.isoformat()])
-                self.running_processes.append((p, begin_interval, current))
+                self.running_processes[source].append((p, begin_interval, current))
                 current = current - timedelta(self.floating_window_days / 2)
 
         self.cache.sadd('META:sources', *self.sources)
@@ -85,21 +87,21 @@ class LookupManager(AbstractManager):
         # Kill the processes with old data to clear memory
         for source in self.sources:
             first_loop = True
-            for p, first, last in sorted(self.running_processes, key=lambda tup: tup[2], reverse=True):
+            for p, first, last in sorted(self.running_processes[source], key=lambda tup: tup[2], reverse=True):
                 if first_loop:
                     first_loop = False
                     if last < (date.today() + timedelta(self.floating_window_days / 2)):
                         new_first = date.today()
                         new_last = date.today() + timedelta(days=self.floating_window_days)
                         new_p = Popen(['lookup', source, new_first.isoformat(), new_last.isoformat()])
-                        self.running_processes.append((new_p, new_first, new_last))
+                        self.running_processes[source].append((new_p, new_first, new_last))
                 if last < (date.today() - timedelta(days=self.days_in_memory)):
                     p.kill()
                 elif p.poll():
                     logging.warning(f'Lookup process died: {first} {last}')
                     # FIXME - maybe: respawn a dead process?
             # Cleanup the process list
-            self.running_processes = [process for process in self.running_processes if process[0].poll() is None]
+            self.running_processes[source] = [process for process in self.running_processes[source] if process[0].poll() is None]
 
         self.cache.hmset('META:expected_interval', {'first': (date.today() - timedelta(days=self.days_in_memory)).isoformat(),
                                                     'last': date.today().isoformat()})
@@ -111,7 +113,7 @@ def main():
     parser.parse_args()
 
     lookup = LookupManager()
-    lookup.run(sleep_in_sec=1)
+    lookup.run(sleep_in_sec=3600)
 
 
 if __name__ == '__main__':
