@@ -5,7 +5,7 @@ set -x
 
 sudo apt install libbz2-dev zlib1g-dev
 if [ ! -d bgpdump ]; then
-    hg clone https://bitbucket.org/ripencc/bgpdump
+    git clone https://github.com/RIPE-NCC/bgpdump.git
     pushd bgpdump
 else
     pushd bgpdump
