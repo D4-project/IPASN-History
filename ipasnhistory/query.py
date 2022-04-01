@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import ipaddress
 import logging
 import time
@@ -66,17 +65,17 @@ class Query():
     def meta(self):
         '''Get meta information from the current instance'''
         expected_interval = self.cache.hgetall('META:expected_interval')
-        expected_dates = set([date.isoformat() for date in self.perdelta(parse(expected_interval['first']).date(),
-                                                                         parse(expected_interval['last']).date())])
+        expected_dates = {date.isoformat() for date in self.perdelta(parse(expected_interval['first']).date(),
+                                                                         parse(expected_interval['last']).date())}
         cached_dates_by_sources = {}
         for source in self.sources:
             cached_v4 = self.cache.smembers(f'{source}|v4|cached_dates')
-            temp_cached_as_date = set([parse(c).date().isoformat() for c in cached_v4])
+            temp_cached_as_date = {parse(c).date().isoformat() for c in cached_v4}
             missing_v4 = sorted(list(expected_dates - temp_cached_as_date))
             percent_v4 = float(len(expected_dates) - len(missing_v4)) * 100 / len(expected_dates)
 
             cached_v6 = self.cache.smembers(f'{source}|v6|cached_dates')
-            temp_cached_as_date = set([parse(c).date().isoformat() for c in cached_v6])
+            temp_cached_as_date = {parse(c).date().isoformat() for c in cached_v6}
             missing_v6 = sorted(list(expected_dates - temp_cached_as_date))
             percent_v6 = float(len(expected_dates) - len(missing_v6)) * 100 / len(expected_dates)
 

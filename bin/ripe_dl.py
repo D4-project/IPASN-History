@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import argparse
 import logging
@@ -39,9 +38,9 @@ class RipeDownloader(AbstractManager):
         self.logger.info(f'New file to download: {path}')
         safe_create_dir(store_path.parent)
         async with session.get(self.url.format(path)) as r:
-            self.logger.debug('Starting {}'.format(self.url.format(path)))
+            self.logger.debug(f'Starting {self.url.format(path)}')
             if r.status != 200:
-                self.logger.info('Unreachable: {}'.format(self.url.format(path)))
+                self.logger.info(f'Unreachable: {self.url.format(path)}')
                 return
             content = await r.read()
             if not content.startswith(b'\x1f\x8b'):

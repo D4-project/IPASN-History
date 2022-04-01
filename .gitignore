@@ -117,3 +117,6 @@ config/*.json
 config/*.json.bkp
 
 rawdata
+storage/kvrocks*.log.*
+storage/kvrocks.INFO
+storage/db
