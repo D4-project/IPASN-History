@@ -99,6 +99,9 @@ class RipeLoader(AbstractManager):
             routes = routeview(path)
             self.logger.info('Content loaded')
             for address_family, entries in routes.items():
+                if not entries:
+                    # the file is broken
+                    break
                 to_import: Dict[str, Any] = defaultdict(lambda: {address_family: set(), 'ipcount': 0})
                 for prefix, asn in entries:
                     network = ip_network(prefix)
@@ -112,9 +115,13 @@ class RipeLoader(AbstractManager):
                     p.sadd(f'{self.key_prefix}|{address_family}|{date}|{asn}', *data[address_family])  # Store all prefixes
                     p.set(f'{self.key_prefix}|{address_family}|{date}|{asn}|ipcount', data['ipcount'])  # Total IPs for the AS
                     p.execute()
-            self.logger.debug('All keys ready')
-            self.update_last(address_family, date)
-            self.logger.info(f'Done with {path}')
+            else:
+                self.logger.debug('All keys ready')
+                self.update_last(address_family, date)
+                self.logger.info(f'Done with {path}')
+                continue
+            # the file has invalid entries, delete it and expect to have it re-downloaded later
+            path.unlink()
 
 
 def main():
