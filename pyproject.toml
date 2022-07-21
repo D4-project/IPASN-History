@@ -23,7 +23,7 @@ lookup = "bin.lookup:main"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-redis = {version = "^4.3.1", extras = ["hiredis"]}
+redis = {version = "^4.3.4", extras = ["hiredis"]}
 flask-restx = "^0.5.1"
 gunicorn = "^20.1.0"
 pytricia = {git = "https://github.com/jsommers/pytricia.git"}
@@ -34,12 +34,12 @@ bgpdumpy = {version = "^1.1.4", optional = true}
 pyipasnhistory = "^2.1.1"
 
 [tool.poetry.dev-dependencies]
-ipython = "^8.3.0"
-mypy = "^0.950"
-types-setuptools = "^57.4.15"
-types-redis = "^4.2.5"
-types-requests = "^2.27.27"
-types-python-dateutil = "^2.8.16"
+ipython = "^8.4.0"
+mypy = "^0.971"
+types-setuptools = "^63.2.1"
+types-redis = "^4.3.8"
+types-requests = "^2.28.3"
+types-python-dateutil = "^2.8.19"
 
 [tool.poetry.extras]
 ripe = ["bgpdumpy"]
