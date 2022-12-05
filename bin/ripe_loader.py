@@ -96,7 +96,11 @@ class RipeLoader(AbstractManager):
                 self.logger.debug(f'Already loaded {path}')
                 continue
             self.logger.info(f'Loading {path}')
-            routes = routeview(path)
+            try:
+                routes = routeview(path)
+            except Exception:
+                self.logger.exception(f'Unable to load routes for {path}.')
+                path.unlink()
             self.logger.info('Content loaded')
             for address_family, entries in routes.items():
                 if not entries:
