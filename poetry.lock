@@ -845,7 +845,7 @@ ripe = ["bgpdumpy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "34ff360db773e330726a22b79be00e007bb1d4aa5f2f4d2b7c65db9a90b10371"
+content-hash = "4f1dbd71d2fc1909ba7cec2eb001531598ecb8747703549d0060463bcdaa021a"
 
 [metadata.files]
 aiodns = [
