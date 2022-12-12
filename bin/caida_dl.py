@@ -23,8 +23,8 @@ class CaidaDownloader(AbstractManager):
     def __init__(self, loglevel: int=logging.INFO):
         super().__init__(loglevel)
         self.script_name = "caida_downloader"
-        self.ipv6_url = 'http://data.caida.org/datasets/routing/routeviews6-prefix2as/{}'
-        self.ipv4_url = 'http://data.caida.org/datasets/routing/routeviews-prefix2as/{}'
+        self.ipv6_url = 'http://publicdata.caida.org/datasets/routing/routeviews6-prefix2as/{}'
+        self.ipv4_url = 'http://publicdata.caida.org/datasets/routing/routeviews-prefix2as/{}'
         self.storage_root = get_data_dir()
 
     async def fetch_existing_routes(self, cutoff_date: date):
