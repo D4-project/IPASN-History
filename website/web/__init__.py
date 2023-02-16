@@ -74,7 +74,7 @@ class IPQuery(Resource):
 
     @api.doc(body=ipquery_fields)
     def post(self):
-        d = _unpack_query(request.get_json(force=True))  # type: ignore
+        d = _unpack_query(request.get_json(force=True))
         try:
             return query.query(**d)
         except Exception as e:
@@ -91,7 +91,7 @@ class MassQuery(Resource):
     @api.doc(body=mass_ipquery_fields)
     def post(self):
         try:
-            to_query: List = request.get_json(force=True)  # type: ignore
+            to_query: List = request.get_json(force=True)
             for c in to_query:
                 c = _unpack_query(c)
             return query.mass_query(to_query)
@@ -105,7 +105,7 @@ class MassCache(Resource):
     @api.doc(body=mass_ipquery_fields)
     def post(self):
         try:
-            to_query: List = request.get_json(force=True)  # type: ignore
+            to_query: List = request.get_json(force=True)
             for c in to_query:
                 c = _unpack_query(c)
             return query.mass_cache(to_query)
@@ -120,7 +120,7 @@ class ASNMeta(Resource):
     @api.doc(body=asnquery_fields)
     def post(self):
         try:
-            to_query = _unpack_query(request.get_json(force=True))  # type: ignore
+            to_query = _unpack_query(request.get_json(force=True))
             return query.asn_meta(**to_query)
         except Exception as e:
             return {'error': str(e)}
