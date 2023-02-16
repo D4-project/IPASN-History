@@ -19,4 +19,4 @@ jobs:
         poetry install
     - name: Test typing with mypy
       run: |
-        poetry run mypy .
+        poetry run mypy --cache-dir=/dev/null .
