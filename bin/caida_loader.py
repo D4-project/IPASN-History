@@ -65,6 +65,10 @@ class CaidaLoader(AbstractManager):
                     to_import[asn]['ipcount'] += network.num_addresses
 
             self.logger.debug('Content loaded')
+            if not to_import.keys():
+                self.logger.warning(f'Nothing to import for {self.key_prefix}|{address_family}|{date}: {to_import}')
+                path.unlink()
+                continue
             p = self.storagedb.pipeline()
             p.sadd(f'{self.key_prefix}|{address_family}|dates', date)
             p.sadd(f'{self.key_prefix}|{address_family}|{date}|asns', *to_import.keys())  # Store all ASNs
