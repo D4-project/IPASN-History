@@ -66,7 +66,7 @@ class Query():
         '''Get meta information from the current instance'''
         expected_interval = self.cache.hgetall('META:expected_interval')
         expected_dates = {date.isoformat() for date in self.perdelta(parse(expected_interval['first']).date(),
-                                                                         parse(expected_interval['last']).date())}
+                                                                     parse(expected_interval['last']).date())}
         cached_dates_by_sources = {}
         for source in self.sources:
             cached_v4 = self.cache.smembers(f'{source}|v4|cached_dates')
@@ -161,7 +161,9 @@ class Query():
                 for k in self._keys_for_query(to_query):
                     _, _, date, _ = k.split('|')
                     data = self.cache.hgetall(k)
-                    if data and date in responses:
+                    if (data and date in responses
+                            and ('asn' in data and data['asn'] not in [None, 0, '0'])
+                            and ('prefix' in data and data['prefix'] not in [None, '0.0.0.0/0', '::/0'])):
                         # we have more than one query for the same date, find the best one
                         if ipaddress.ip_network(data['prefix']).num_addresses < ipaddress.ip_network(responses[date]['prefix']).num_addresses:
                             responses[date] = data
@@ -183,8 +185,7 @@ class Query():
                         to_append['response'] = sorted_responses
                     else:
                         # specific date, return most recent valid answer (if any)
-                        tmp = {date: entry for date, entry in sorted_responses.items() if entry and entry['asn'] != '0'}
-                        if tmp:
+                        if (tmp := {date: entry for date, entry in sorted_responses.items() if entry and entry['asn'] not in ['0', 0]}):
                             to_append['response'] = tmp
                         else:
                             to_append['response'] = sorted_responses
@@ -246,7 +247,9 @@ class Query():
                     waiting = True
                     continue
                 data['source'] = _source
-                if _date in responses:
+                if (_date in responses
+                        and ('asn' in data and data['asn'] not in [None, 0, '0'])
+                        and ('prefix' in data and data['prefix'] not in [None, '0.0.0.0/0', '::/0'])):
                     # we have more than one query for the same date, find the best one
                     if ipaddress.ip_network(data['prefix']).num_addresses < ipaddress.ip_network(responses[_date]['prefix']).num_addresses:
                         responses[date] = data
