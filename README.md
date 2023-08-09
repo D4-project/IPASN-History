@@ -196,7 +196,7 @@ cd ..
 ```bash
 git clone https://github.com/KvrocksLabs/kvrocks.git
 cd kvrocks
-make -j4
+./x.py build
 cd ..
 ```
 
