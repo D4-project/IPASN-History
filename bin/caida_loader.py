@@ -9,7 +9,7 @@ from collections import defaultdict
 from ipaddress import ip_network
 from typing import Dict, Any
 
-from redis import Redis
+from redis import Redis, exceptions
 
 from ipasnhistory.default import get_socket_path, AbstractManager, get_config
 from ipasnhistory.helpers import get_data_dir
@@ -33,7 +33,10 @@ class CaidaLoader(AbstractManager):
         self.load_all()
 
     def already_loaded(self, address_family: str, date: str) -> bool:
-        return self.storagedb.sismember(f'{self.key_prefix}|{address_family}|dates', date)
+        try:
+            return self.storagedb.sismember(f'{self.key_prefix}|{address_family}|dates', date)
+        except exceptions.ResponseError:
+            return False
 
     def update_last(self, address_family: str, date: str) -> None:
         cur_last = self.storagedb.get(f'{self.key_prefix}|{address_family}|last')
