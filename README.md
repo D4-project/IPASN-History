@@ -183,7 +183,7 @@ The REST API has two entry points:
 ```bash
 git clone https://github.com/antirez/redis.git
 cd redis
-git checkout 6.2
+git checkout 7.0
 make
 make test
 cd ..
@@ -196,6 +196,7 @@ cd ..
 ```bash
 git clone https://github.com/KvrocksLabs/kvrocks.git
 cd kvrocks
+git checkout 2.5
 ./x.py build
 cd ..
 ```
