@@ -3,7 +3,6 @@
 import json
 import pkg_resources
 
-from datetime import date, timedelta
 from typing import Dict, List
 
 from flask import Flask, request
@@ -22,11 +21,8 @@ app.wsgi_app = ReverseProxied(app.wsgi_app)  # type: ignore
 app.config['SECRET_KEY'] = get_secret_key()
 
 
-first_date = date.today() - timedelta(days=get_config('generic', 'days_in_memory'))
-last_date = date.today()
-
 api = Api(app, title='IP ASN History API',
-          description=f'API to query IPASN History (query interval: {first_date.isoformat()} - {last_date.isoformat()}).',
+          description=f'API to query IPASN History, the last {get_config("generic", "days_in_memory")} days are available.',
           version=pkg_resources.get_distribution('ipasnhistory').version)
 
 query: Query = Query()
