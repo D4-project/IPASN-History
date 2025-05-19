@@ -8,7 +8,7 @@ from datetime import date
 from typing import Tuple
 
 import aiohttp
-from bs4 import BeautifulSoup  # type: ignore
+from bs4 import BeautifulSoup, Tag
 from dateutil.relativedelta import relativedelta
 
 from ipasnhistory.default import AbstractManager, safe_create_dir, get_config
@@ -88,7 +88,11 @@ class CaidaDownloader(AbstractManager):
                 async with session.get(root_url.format(list_url)) as r:
                     soup = BeautifulSoup(await r.text(), 'html.parser')
                     for a in soup.find_all('a'):
+                        if not isinstance(a, Tag):
+                            continue
                         href = a.get('href')
+                        if not isinstance(href, str):
+                            continue
                         if href.startswith('routeviews'):
                             dl_path = f'{cur_date:%Y/%m}/{href}'
                             self.logger.debug(dl_path)
