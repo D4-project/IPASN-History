@@ -89,7 +89,7 @@ class CaidaDownloader(AbstractManager):
                     soup = BeautifulSoup(await r.text(), 'html.parser')
                     for a in soup.find_all('a'):
                         if not isinstance(a, Tag):
-                            continue
+                            continue  # type: ignore[unreachable]
                         href = a.get('href')
                         if not isinstance(href, str):
                             continue
