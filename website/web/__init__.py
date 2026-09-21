@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import json
-import pkg_resources
 
+from importlib.metadata import version
 from typing import Dict, List
 
 from flask import Flask, request
@@ -23,7 +23,7 @@ app.config['SECRET_KEY'] = get_secret_key()
 
 api = Api(app, title='IP ASN History API',
           description=f'API to query IPASN History, the last {get_config("generic", "days_in_memory")} days are available.',
-          version=pkg_resources.get_distribution('ipasnhistory').version)
+          version=version('ipasnhistory'))
 
 query: Query = Query()
 
